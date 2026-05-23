@@ -22,12 +22,21 @@ func defaultConfig() Config {
 		IPFSApi:      envOr("IPFS_API", "http://localhost:5001"),
 		PollInterval: parseDuration(envOr("POLL_INTERVAL", "900"), 15*60),
 		IPNSName:     envOr("IPNS_NAME", ""),
-		FallbackURLs: []string{
-			"https://raw.githubusercontent.com/cjp-decentralized/cjp-decentralized/main/latest.json",
-		},
+		FallbackURLs: fallbackURLs(),
 		SignersFile: envOr("SIGNERS_FILE", "trusted-signers.json"),
 		StateFile:   envOr("STATE_FILE", home+"/.cjp/mirror-state.json"),
 		Country:     envOr("COUNTRY", ""),
+	}
+}
+
+// fallbackURLs returns the list of latest.json sources.
+// Override with FALLBACK_URL env var (single URL) for custom deployments.
+func fallbackURLs() []string {
+	if u := os.Getenv("FALLBACK_URL"); u != "" {
+		return []string{u}
+	}
+	return []string{
+		"https://raw.githubusercontent.com/grussdorian/cjp-decentralised/main/latest.json",
 	}
 }
 
