@@ -56,10 +56,10 @@ export async function handleJoin(form) {
   btn.disabled = true;
 
   const name = form.elements.name.value.trim();
-  const state = form.elements.state.value;
+  const location = form.elements.location.value.trim();
   const captcha = getCaptchaToken(form);
 
-  if (!name || !state) {
+  if (!name || !location) {
     setStatus(form, 'err', 'Please fill in all fields.');
     btn.disabled = false;
     return;
@@ -79,7 +79,7 @@ export async function handleJoin(form) {
   try {
     // age-encrypt the payload to ALL party member keys simultaneously.
     // Each member can independently decrypt with their own private key.
-    const plaintext = new TextEncoder().encode(JSON.stringify({ name, state, ts: Date.now() }));
+    const plaintext = new TextEncoder().encode(JSON.stringify({ name, location, ts: Date.now() }));
     const ciphertext = await ageEncrypt(plaintext, activeKeys);
     const content = btoa(String.fromCharCode(...ciphertext)); // base64
 
