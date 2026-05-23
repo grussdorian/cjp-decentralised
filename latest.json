@@ -1,12 +1,12 @@
 {
-  "cid": "bafybeihsdtfhkqvbqyaycozavwrkemg3zwjplbjzaes4en5lut2vmmn4yy",
-  "version": 7,
-  "timestamp": 1779567776,
-  "note": "query all relays, github link on mirror page, sync tampered JS",
+  "cid": "bafybeieice5fh23l3fp42j2xrfesu5aiij7owjug4dxxyg7pbim4rv3g6q",
+  "version": 8,
+  "timestamp": 1779567905,
+  "note": "github verify chain, CI badge in README, trust.html github link",
   "signatures": [
     {
       "signer": "c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3",
-      "signature": "717ba693b9500e5a2982a46bd0d0d662a2250ae1d53458df7f7de7dc89076a81f0f69cde4bbf351aa0f6c3c9da7bb285de3686043eac2a05742440e9252e8900"
+      "signature": "56f723930f27198d5d6ae28619ab8b97c8e6fa52c7dd098a5ec0ec894dd30c83a23e8c73b5bac29f24bdb5098d379769dbfbdd92f00eab5cc09a462c6c6c6b02"
     }
   ]
 }

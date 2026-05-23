@@ -34,7 +34,7 @@
     one or more short key fingerprints — the first 8 and last 4 characters of each Ed25519
     public key that signed this version. For example:
   </p>
-  <pre><code>✓ Signed · bafybeic… · v7 · c1688ff0…b5c3</code></pre>
+  <pre><code>✓ Authentic CJP content · bafybeic… · v3 · c1688ff0…b5c3</code></pre>
   <p>
     The current official key fingerprints are published here and must be cross-checked
     against at least one independent source before you trust this site. A fake site would
@@ -77,11 +77,6 @@
       If the fingerprint they show you matches the badge on this page, you are on the real site.
     </li>
     <li>
-      <strong>GitHub source repo</strong> — compare the CID shown in the badge against
-      <a href="https://github.com/grussdorian/cjp-decentralised/blob/main/latest.json" target="_blank" rel="noopener noreferrer">latest.json on GitHub</a>.
-      The <code>cid</code> field must be identical. The <code>signer</code> or <code>signatures[].signer</code> field must match the fingerprint in the badge.
-    </li>
-    <li>
       <strong>IPFS directly</strong> — the signed CID in the badge links directly to content on IPFS.
       Even if every clearweb domain is seized, the content at that CID is immutable and signed.
     </li>
@@ -109,29 +104,6 @@
     A site that fails any of these steps shows a <span style="color:#e05555">red badge</span>.
     A site that cannot reach GitHub or IPFS shows a <span style="color:#777">grey badge</span>
     — this does not mean the site is fake, only that live verification is unavailable.
-  </p>
-
-  <h2>Extending trust to new party members</h2>
-  <p>
-    The threshold is currently <strong>1-of-1</strong>. As more members join, the threshold
-    should be raised so no single compromised key can publish a rogue update.
-    The workflow to add a new signer:
-  </p>
-  <ol>
-    <li>New member runs <code>publisher keygen --out ~/.cjp/</code> and shares their public key hex.</li>
-    <li>Add the new pubkey to <code>HARDCODED_SIGNERS</code> in <code>packages/site/js/verify.js</code>
-        and to <code>trusted-signers.json</code>. Raise <code>HARDCODED_THRESHOLD</code> and
-        <code>trusted-signers.json#threshold</code> as appropriate.</li>
-    <li>Rebuild: <code>node scripts/build.js</code></li>
-    <li>Compute new CID: <code>ipfs add -r --cid-version=1 --quieter dist/</code></li>
-    <li>Each existing signer runs <code>publisher sign --cid &lt;new-cid&gt;</code> — once threshold
-        signatures are collected, <code>publisher publish</code> broadcasts the update.</li>
-    <li>Commit <code>latest.json</code> and <code>trusted-signers.json</code> to the repo.</li>
-  </ol>
-  <p>
-    Until a new CID (containing the updated <code>verify.js</code>) is signed and deployed,
-    the new key has no effect. This prevents a rogue actor from quietly adding themselves
-    to the signers list.
   </p>
 
   <h2>What this cannot protect against</h2>

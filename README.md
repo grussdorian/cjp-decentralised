@@ -1,6 +1,14 @@
 # CJP Decentralized
 
+[![Build](https://github.com/grussdorian/cjp-decentralised/actions/workflows/publish.yml/badge.svg)](https://github.com/grussdorian/cjp-decentralised/actions/workflows/publish.yml)
+
 Censorship-resistant web presence for the Cockroach Janata Party. No single point of failure across hosting, naming, form backends, or identity.
+
+## Live mirror
+
+**[cjp.fheya.de](https://cjp.fheya.de)** — official clearweb mirror
+
+**Verify it:** The badge at the bottom of any mirror shows the IPFS CID and key fingerprint of the content it is serving. Cross-check the CID against [`latest.json`](latest.json) in this repo — they must match. The fingerprint (`c1688ff0…b5c3`) must match the [trusted signers list](trusted-signers.json). If a mirror shows a different fingerprint or CID, it is not serving authentic content.
 
 ## Repository layout
 
