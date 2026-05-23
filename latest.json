@@ -1,12 +1,12 @@
 {
-  "cid": "bafybeicpdosradlm3y2n7kc7camuj2pbuyfnarlklanrwc47l6ky66aidq",
-  "version": 14,
-  "timestamp": 1779580043,
-  "note": "fix: parallel IPFS gateway fetch with timeout, 30s mirror heartbeat window",
+  "cid": "bafybeiae4vgxpphj4wnkdgzeuyxkvwlao5inodkjwxlmjotd6hwmixr53y",
+  "version": 15,
+  "timestamp": 1779580289,
+  "note": "feat: mirror list auto-refreshes every 30s, add mirror.service",
   "signatures": [
     {
       "signer": "c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3",
-      "signature": "c51dc572267afea8c4a71b1898fa56e3ab6812c089110cc7d625a119f70078861b8112894ae892e00c3504f7bcfd72b29fa09fcf1d0619a3cfff33600061df0b"
+      "signature": "11507ad33cd149fecef8d329b0f43db10966e4636697eecb7bf99dd471f903ef1075438b4f6cf84e5b2ecfc6c8eefdc2782ef3c54096fd430d2f9f34cb54e807"
     }
   ]
 }

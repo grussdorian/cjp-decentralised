@@ -118,10 +118,10 @@ COUNTRY=IN \
 </footer>
 <script type="module">
   import { loadMirrorStats } from './js/mirrors.js';
-  loadMirrorStats(
-    document.getElementById('mirror-count'),
-    document.getElementById('mirror-list')
-  );
+  const countEl = document.getElementById('mirror-count');
+  const listEl = document.getElementById('mirror-list');
+  loadMirrorStats(countEl, listEl);
+  setInterval(() => loadMirrorStats(countEl, listEl), 30000);
   // latest.json lives in the repo root, not in dist/, so fetch from GitHub.
   fetch('https://raw.githubusercontent.com/grussdorian/cjp-decentralised/main/latest.json', { cache: 'no-cache' })
     .then(r => r.json())
