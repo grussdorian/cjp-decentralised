@@ -21,7 +21,7 @@ export const RELAYS = [
 // Generate a key pair with: age-keygen
 // Add only the public key here (from stdout of age-keygen).
 export const PARTY_AGE_KEYS = [
-  // 'age1REPLACE_WITH_REAL_KEY',
+  'age1emk4axrheghnuvqyasxjcaxqeap50s4rdfvrpe548a747sjvks3swav2vc',
 ];
 
 // Tag used for public demand/petition events
@@ -33,8 +33,3 @@ export const MIRROR_TAG = 'cjp-mirrors';
 // Tag used for update notifications
 export const UPDATE_TAG = 'cjp-update';
 
-// Captcha sitekeys. Turnstile is primary (free, unlimited).
-// mCaptcha is self-hosted fallback shown when Turnstile fails to load (Tor, CDN blocks).
-export const TURNSTILE_SITEKEY = 'REPLACE_WITH_TURNSTILE_SITEKEY';
-export const MCAPTCHA_SITEKEY  = 'REPLACE_WITH_MCAPTCHA_SITEKEY';
-export const MCAPTCHA_URL      = 'REPLACE_WITH_MCAPTCHA_URL';

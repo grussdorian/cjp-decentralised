@@ -1,4 +1,4 @@
-name: Build and Upload to IPFS
+name: Build and compute IPFS CID
 
 on:
   push:
@@ -19,36 +19,23 @@ jobs:
       - name: Build site
         run: node scripts/build.js
 
-      - name: Upload dist as artifact
+      - name: Compute IPFS CID
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          wget -qO- https://dist.ipfs.tech/kubo/v0.29.0/kubo_v0.29.0_linux-amd64.tar.gz | tar -xz
+          ./kubo/ipfs init --empty-repo -p test 2>/dev/null
+          CID=$(./kubo/ipfs add --only-hash -r --cid-version=1 --quieter dist/)
+          echo "## IPFS CID" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "$CID" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Sign it: \`publisher sign --key ~/.cjp/signing.key --cid $CID\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Then pin from any IPFS node: \`ipfs pin add $CID\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload dist artifact
         uses: actions/upload-artifact@v4
         with:
           name: site-dist
           path: dist/
           retention-days: 7
-
-  upload:
-    needs: build
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Build site
-        run: node scripts/build.js
-
-      - name: Upload to Pinata (IPFS)
-        id: ipfs
-        env:
-          PINATA_JWT: ${{ secrets.PINATA_JWT }}
-        run: |
-          CID=$(node scripts/pinata-upload.mjs dist)
-          echo "cid=$CID" >> "$GITHUB_OUTPUT"
-          echo "## New IPFS CID" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          echo "$CID" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          echo "Next step: run \`publisher sign --cid $CID\` locally to publish." >> "$GITHUB_STEP_SUMMARY"
