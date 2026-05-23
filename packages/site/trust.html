@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How to Verify This Site — Cockroach Janata Party</title>
+<meta name="description" content="How to independently verify that this is the genuine CJP website and not a state-run propaganda clone.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav>
+  <a class="logo" href="index.html">CJP <em>Cockroach Janata Party</em></a>
+  <ul>
+    <li><a href="index.html">Manifesto</a></li>
+    <li><a href="join.html">Join</a></li>
+    <li><a href="demand.html">Demand</a></li>
+    <li><a href="mirror.html">Mirror</a></li>
+  </ul>
+</nav>
+<main>
+  <h1>How to Verify This Site</h1>
+  <p class="sub">Anyone can clone a website. Here is how to prove you are reading the real one.</p>
+
+  <h2>The problem</h2>
+  <p>
+    A state actor or hostile group could copy this entire site, replace the manifesto with
+    propaganda, and run the same "verified" badge infrastructure over their own signing keys.
+    A green badge alone is not enough — you must also check <em>whose keys</em> signed it.
+  </p>
+
+  <h2>The official signing key fingerprints</h2>
+  <p>
+    Every page on this site shows a badge in the footer. When the badge is green, it displays
+    one or more short key fingerprints — the first 8 and last 4 characters of each Ed25519
+    public key that signed this version. For example:
+  </p>
+  <pre><code>✓ Authentic CJP content · bafybeic… · v3 · c1688ff0…b5c3</code></pre>
+  <p>
+    The current official key fingerprints are published here and must be cross-checked
+    against at least one independent source before you trust this site. A fake site would
+    show different fingerprints.
+  </p>
+
+  <div class="card" style="margin:1.5rem 0">
+    <p style="font-size:.8rem;color:var(--muted);margin-bottom:.5rem">Official signing key(s)</p>
+    <table style="width:100%;border-collapse:collapse;font-size:.85rem">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding:.4rem .6rem;border-bottom:1px solid var(--border);color:var(--muted)">Full public key (hex)</th>
+          <th style="text-align:left;padding:.4rem .6rem;border-bottom:1px solid var(--border);color:var(--muted)">Short fingerprint</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="padding:.4rem .6rem;font-family:monospace;font-size:.78rem;word-break:break-all">
+            c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3
+          </td>
+          <td style="padding:.4rem .6rem;font-family:monospace">c1688ff0…b5c3</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>How to cross-check the fingerprints</h2>
+  <p>Verify the fingerprints above match what you find on at least one of these independent channels:</p>
+  <ul>
+    <li>
+      <strong>Nostr</strong> — search for <code>#cjp-keys</code> events from the party's official Nostr account.
+      The full public key will be in the event body.
+    </li>
+    <li>
+      <strong>Physical materials</strong> — the fingerprint is printed on CJP flyers distributed at protests
+      and university campuses. If you received a flyer, check the bottom corner.
+    </li>
+    <li>
+      <strong>Trusted contacts</strong> — ask someone who was already following CJP before any censorship.
+      If the fingerprint they show you matches the badge on this page, you are on the real site.
+    </li>
+    <li>
+      <strong>IPFS directly</strong> — the signed CID in the badge links directly to content on IPFS.
+      Even if every clearweb domain is seized, the content at that CID is immutable and signed.
+    </li>
+  </ul>
+
+  <h2>What the badge actually checks</h2>
+  <ol>
+    <li>
+      Fetches <code>latest.json</code> from GitHub — a pointer to the current IPFS CID.
+    </li>
+    <li>
+      Verifies the Ed25519 signature(s) against keys <strong>hardcoded inside this very file</strong>
+      (not fetched from GitHub — so GitHub cannot be used to inject fake keys).
+    </li>
+    <li>
+      Fetches <code>integrity.json</code> from IPFS via the signed CID. Because IPFS is
+      content-addressed, this file cannot be tampered with without invalidating the CID.
+    </li>
+    <li>
+      Hashes this page's source code and compares it to the hash in <code>integrity.json</code>.
+      A mirror serving modified content will fail this check even if the CID signature is valid.
+    </li>
+  </ol>
+  <p>
+    A site that fails any of these steps shows a <span style="color:#e05555">red badge</span>.
+    A site that cannot reach GitHub or IPFS shows a <span style="color:#777">grey badge</span>
+    — this does not mean the site is fake, only that live verification is unavailable.
+  </p>
+
+  <h2>What this cannot protect against</h2>
+  <p>
+    If an attacker obtains the actual CJP signing private keys <em>and</em> takes over the
+    GitHub repository, they could publish a modified site with a valid green badge. This is
+    why key custody is distributed across multiple independent party members: a valid update
+    requires signatures from a threshold of keyholders.
+  </p>
+  <p>
+    No software mechanism can fully substitute for a community that knows and trusts its own
+    members. The badge is a tool, not a guarantee.
+  </p>
+</main>
+<footer>
+  This site is <a href="mirror.html">mirrored across hundreds of nodes</a> and cannot be taken down.
+  <br><span id="cjp-verify-badge" class="cjp-badge cjp-badge--pending"></span>
+</footer>
+<script src="js/verify.js" defer></script>
+</body>
+</html>

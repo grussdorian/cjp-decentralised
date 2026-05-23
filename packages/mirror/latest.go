@@ -8,13 +8,32 @@ import (
 	"time"
 )
 
+type Sig struct {
+	Signer    string `json:"signer"`
+	Signature string `json:"signature"`
+}
+
 type Latest struct {
 	CID       string `json:"cid"`
 	Version   int64  `json:"version"`
 	Timestamp int64  `json:"timestamp"`
-	Note      string `json:"note"`
-	Signer    string `json:"signer"`
-	Signature string `json:"signature"`
+	Note      string `json:"note,omitempty"`
+	// Legacy single-sig fields (v1 format).
+	Signer    string `json:"signer,omitempty"`
+	Signature string `json:"signature,omitempty"`
+	// Multi-sig: each trusted signer adds an entry.
+	Signatures []Sig `json:"signatures,omitempty"`
+}
+
+// allSigs normalises both formats into a single slice.
+func (l *Latest) allSigs() []Sig {
+	if len(l.Signatures) > 0 {
+		return l.Signatures
+	}
+	if l.Signer != "" {
+		return []Sig{{Signer: l.Signer, Signature: l.Signature}}
+	}
+	return nil
 }
 
 // fetchLatest tries each URL in order and returns the first successfully parsed Latest.

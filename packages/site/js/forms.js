@@ -8,7 +8,7 @@ import {
   finalizeEvent,
 } from 'https://esm.sh/nostr-tools@2.10.4';
 
-import { encrypt as ageEncrypt } from 'https://esm.sh/age-encryption@0.1.2';
+import { Encrypter } from 'https://esm.sh/age-encryption@0.3.0';
 
 import { RELAYS, PARTY_AGE_KEYS, DEMAND_TAG } from './relays.js';
 
@@ -80,7 +80,9 @@ export async function handleJoin(form) {
     // age-encrypt the payload to ALL party member keys simultaneously.
     // Each member can independently decrypt with their own private key.
     const plaintext = new TextEncoder().encode(JSON.stringify({ name, location, ts: Date.now() }));
-    const ciphertext = await ageEncrypt(plaintext, activeKeys);
+    const enc = new Encrypter();
+    for (const key of activeKeys) await enc.addRecipient(key);
+    const ciphertext = await enc.encrypt(plaintext);
     const content = btoa(String.fromCharCode(...ciphertext)); // base64
 
     const sk = generateSecretKey();

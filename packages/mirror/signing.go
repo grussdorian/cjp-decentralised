@@ -7,30 +7,37 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 )
 
 type TrustedSigners struct {
-	Signers []string `json:"signers"`
+	Threshold int      `json:"threshold"`
+	Signers   []string `json:"signers"`
 }
 
-func loadSigners(path string) ([]ed25519.PublicKey, error) {
+// loadSignersConfig reads trusted-signers.json and returns both the raw config
+// (for threshold) and the decoded public keys (for fast verification).
+func loadSignersConfig(path string) (*TrustedSigners, []ed25519.PublicKey, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("read signers file: %w", err)
+		return nil, nil, fmt.Errorf("read signers file: %w", err)
 	}
 	var ts TrustedSigners
 	if err := json.Unmarshal(raw, &ts); err != nil {
-		return nil, fmt.Errorf("parse signers file: %w", err)
+		return nil, nil, fmt.Errorf("parse signers file: %w", err)
+	}
+	if ts.Threshold <= 0 {
+		ts.Threshold = 1
 	}
 	keys := make([]ed25519.PublicKey, 0, len(ts.Signers))
 	for _, h := range ts.Signers {
 		b, err := hex.DecodeString(h)
 		if err != nil || len(b) != 32 {
-			return nil, fmt.Errorf("invalid pubkey in trusted-signers.json: %q", h)
+			return nil, nil, fmt.Errorf("invalid pubkey in trusted-signers.json: %q", h)
 		}
 		keys = append(keys, ed25519.PublicKey(b))
 	}
-	return keys, nil
+	return &ts, keys, nil
 }
 
 func signingMessage(cid string, version, timestamp int64) []byte {
@@ -38,33 +45,41 @@ func signingMessage(cid string, version, timestamp int64) []byte {
 	return h[:]
 }
 
-func verifyLatest(trustedKeys []ed25519.PublicKey, cid string, version, timestamp int64, signerHex, sigHex string) error {
-	sig, err := hex.DecodeString(sigHex)
-	if err != nil || len(sig) != 64 {
-		return fmt.Errorf("invalid signature encoding")
+// verifyThreshold checks that latest has at least ts.Threshold valid signatures
+// from keys listed in trusted-signers.json.  Returns (validCount, error).
+func verifyThreshold(ts *TrustedSigners, trustedKeys []ed25519.PublicKey, l *Latest) (int, error) {
+	threshold := ts.Threshold
+	if threshold <= 0 {
+		threshold = 1
 	}
-	msg := signingMessage(cid, version, timestamp)
 
-	// Check that the signing pubkey is trusted
-	signerBytes, err := hex.DecodeString(signerHex)
-	if err != nil || len(signerBytes) != 32 {
-		return fmt.Errorf("invalid signer pubkey encoding")
-	}
-	signer := ed25519.PublicKey(signerBytes)
-
-	trusted := false
-	for _, pk := range trustedKeys {
-		if signer.Equal(pk) {
-			trusted = true
-			break
+	// Build pubkey-hex → decoded-key map for O(1) lookup.
+	keyMap := make(map[string]ed25519.PublicKey, len(ts.Signers))
+	for i, h := range ts.Signers {
+		if i < len(trustedKeys) {
+			keyMap[strings.ToLower(h)] = trustedKeys[i]
 		}
 	}
-	if !trusted {
-		return fmt.Errorf("signer %s is not in trusted-signers.json", signerHex[:16]+"...")
+
+	msg   := signingMessage(l.CID, l.Version, l.Timestamp)
+	valid := 0
+	for _, s := range l.allSigs() {
+		pk, ok := keyMap[strings.ToLower(s.Signer)]
+		if !ok {
+			continue
+		}
+		sigBytes, err := hex.DecodeString(s.Signature)
+		if err != nil || len(sigBytes) != 64 {
+			continue
+		}
+		if ed25519.Verify(pk, msg, sigBytes) {
+			valid++
+		}
 	}
 
-	if !ed25519.Verify(signer, msg, sig) {
-		return fmt.Errorf("signature verification failed")
+	if valid < threshold {
+		return valid, fmt.Errorf("threshold not met: %d/%d trusted signatures (need %d)",
+			valid, len(ts.Signers), threshold)
 	}
-	return nil
+	return valid, nil
 }

@@ -1,8 +1,12 @@
 {
-  "cid": "bafybeiet5r6kquk3g34cobysguucawryuxprnhwcdsen3ynhhjcs5hliva",
-  "version": 1,
-  "timestamp": 1779558771,
-  "note": "initial release",
-  "signer": "c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3",
-  "signature": "823c7da51e83548696f5f45b74471e608e3adea7a858a3900839ae5194ad19432ab68cec112ae82d27f91f1c3d5e6db1a90a1712caed0a0a77ede65405242706"
+  "cid": "bafybeigdbw34yslgolne7fgp3vswuu3hbi5kzseeav6nrbjvm5ymu7i5ca",
+  "version": 3,
+  "timestamp": 1779564808,
+  "note": "fix age-encryption CDN, mirror list empty state, badge wording, add trust page",
+  "signatures": [
+    {
+      "signer": "c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3",
+      "signature": "40c8e1c451c56d11c9cb0d0fffcce39ebc4ea5eef92b8c44b8911a967aded20f158ddccaa91d2db8d1c9a3be1b578bbbb264ef242b0315b5fe78f2a140f40f0f"
+    }
+  ]
 }

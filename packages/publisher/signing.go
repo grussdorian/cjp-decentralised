@@ -9,6 +9,41 @@ import (
 	"strings"
 )
 
+// verifyThreshold checks that latest meets the M-of-N requirement in ts.
+// Returns (validCount, error).
+func verifyThreshold(ts *TrustedSigners, l *Latest) (int, error) {
+	threshold := ts.Threshold
+	if threshold <= 0 {
+		threshold = 1
+	}
+
+	// Build a normalised set of trusted pubkey hex strings.
+	trustedSet := make(map[string]bool, len(ts.Signers))
+	for _, s := range ts.Signers {
+		trustedSet[strings.ToLower(s)] = true
+	}
+
+	valid := 0
+	for _, s := range l.allSigs() {
+		if !trustedSet[strings.ToLower(s.Signer)] {
+			continue
+		}
+		pk, err := hex.DecodeString(s.Signer)
+		if err != nil || len(pk) != 32 {
+			continue
+		}
+		if verifyLatest(ed25519.PublicKey(pk), l.CID, l.Version, l.Timestamp, s.Signature) {
+			valid++
+		}
+	}
+
+	if valid < threshold {
+		return valid, fmt.Errorf("threshold not met: %d/%d trusted signatures (need %d)",
+			valid, len(ts.Signers), threshold)
+	}
+	return valid, nil
+}
+
 // loadPrivateKey reads a 32-byte hex-encoded Ed25519 seed from a file.
 func loadPrivateKey(path string) (ed25519.PrivateKey, error) {
 	raw, err := os.ReadFile(path)

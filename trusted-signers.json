@@ -1,6 +1,6 @@
 {
+  "threshold": 1,
   "signers": [
     "c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3"
-  ],
-  "_comment": "Add Ed25519 public keys (hex) of authorized publishers here. Any one key can sign a valid latest.json update."
+  ]
 }

@@ -10,6 +10,7 @@ import (
 type Daemon struct {
 	cfg         Config
 	ipfs        *ipfsClient
+	ts          *TrustedSigners
 	trustedKeys []ed25519.PublicKey
 	state       *State
 	peerID      string
@@ -22,9 +23,10 @@ func newDaemon(cfg Config) (*Daemon, error) {
 	}
 	ensureNostrKey(state)
 
-	keys, err := loadSigners(cfg.SignersFile)
+	ts, keys, err := loadSignersConfig(cfg.SignersFile)
 	if err != nil {
 		log.Printf("warning: %v — will reject all updates until signers are configured", err)
+		ts   = &TrustedSigners{Threshold: 1}
 		keys = nil
 	}
 
@@ -41,6 +43,7 @@ func newDaemon(cfg Config) (*Daemon, error) {
 	return &Daemon{
 		cfg:         cfg,
 		ipfs:        ipfs,
+		ts:          ts,
 		trustedKeys: keys,
 		state:       state,
 		peerID:      peerID,
@@ -77,15 +80,17 @@ func (d *Daemon) poll() {
 	}
 	log.Printf("Fetched latest.json v%d from %s (CID: %s)", latest.Version, source, latest.CID[:12]+"...")
 
-	// Verify signature
+	// Verify M-of-N threshold signatures
 	if len(d.trustedKeys) == 0 {
 		log.Println("No trusted signers configured — skipping pin")
 		return
 	}
-	if err := verifyLatest(d.trustedKeys, latest.CID, latest.Version, latest.Timestamp, latest.Signer, latest.Signature); err != nil {
+	n, err := verifyThreshold(d.ts, d.trustedKeys, latest)
+	if err != nil {
 		log.Printf("Signature verification failed: %v — ignoring update", err)
 		return
 	}
+	log.Printf("Verified %d/%d signatures (threshold: %d)", n, len(d.ts.Signers), d.ts.Threshold)
 
 	// Already on this version?
 	if latest.CID == d.state.PinnedCID {

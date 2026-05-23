@@ -15,16 +15,20 @@ export async function loadMirrorStats(countEl, listEl) {
     countEl.textContent = seen.size;
   }
 
-  if (listEl && seen.size > 0) {
-    listEl.innerHTML = '';
-    for (const [peer, ev] of seen) {
-      try {
-        const data = JSON.parse(ev.content);
-        const div = document.createElement('div');
-        div.className = 'stat-box';
-        div.innerHTML = `<code>${peer.slice(0, 16)}…</code><br><small style="color:var(--muted)">${data.country || 'Unknown'} · CID ${(data.cid || '').slice(0, 12)}…</small>`;
-        listEl.appendChild(div);
-      } catch {}
+  if (listEl) {
+    if (seen.size === 0) {
+      listEl.innerHTML = '<p style="color:var(--muted);font-size:.875rem">No active mirrors in the last hour. <a href="mirror.html">Be the first.</a></p>';
+    } else {
+      listEl.innerHTML = '';
+      for (const [peer, ev] of seen) {
+        try {
+          const data = JSON.parse(ev.content);
+          const div = document.createElement('div');
+          div.className = 'stat-box';
+          div.innerHTML = `<code>${peer.slice(0, 16)}…</code><br><small style="color:var(--muted)">${data.country || 'Unknown'} · CID ${(data.cid || '').slice(0, 12)}…</small>`;
+          listEl.appendChild(div);
+        } catch {}
+      }
     }
   }
 }
