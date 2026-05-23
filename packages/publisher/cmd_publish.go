@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -17,6 +18,7 @@ func cmdPublish(args []string) {
 	nostrKeyPath := fs.String("nostr-key", filepath.Join(os.Getenv("HOME"), ".cjp", "nostr.key"), "path to Nostr secp256k1 key")
 	ipfsAPI := fs.String("ipfs-api", "http://localhost:5001", "IPFS HTTP API endpoint (empty to skip IPNS)")
 	ipnsKey := fs.String("ipns-key", "self", "IPFS key name for IPNS publishing")
+	seedDist := fs.String("seed-dist", "", "path to dist/ directory to add to IPFS (bootstrap first pin; requires ipfs in PATH)")
 	fs.Parse(args)
 
 	l, err := readLatest(*latestPath)
@@ -25,6 +27,20 @@ func cmdPublish(args []string) {
 	}
 	if l.CID == "" || l.Signature == "" {
 		die("latest.json is unsigned or empty — run 'publisher sign' first")
+	}
+
+	// 0. Seed content into IPFS (bootstrap step, optional)
+	if *seedDist != "" {
+		fmt.Printf("Seeding %s into IPFS...\n", *seedDist)
+		out, err := exec.Command("ipfs", "add", "-r", "--cid-version=1", "--quieter", *seedDist).Output()
+		if err != nil {
+			die("ipfs add: %v", err)
+		}
+		got := strings.TrimSpace(string(out))
+		if got != l.CID {
+			die("CID mismatch: dist produced %s but latest.json has %s", got, l.CID)
+		}
+		fmt.Printf("  ✓ content seeded (%s)\n", got)
 	}
 
 	// 1. Publish to IPNS (optional)
