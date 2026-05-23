@@ -35,8 +35,17 @@ function buildIntegrity(dir, base) {
     if (entry.isDirectory()) {
       Object.assign(out, buildIntegrity(full, base));
     } else if (/\.(html|js|css)$/.test(entry.name)) {
-      const rel  = path.relative(base, full).replace(/\\/g, '/');
-      const hash = crypto.createHash('sha256').update(fs.readFileSync(full)).digest('hex');
+      const rel = path.relative(base, full).replace(/\\/g, '/');
+      let content = fs.readFileSync(full);
+      if (entry.name.endsWith('.html')) {
+        // Strip <script> tags before hashing — mirrors verify.js behaviour.
+        // CDN providers inject scripts into HTML; we hash only document content.
+        content = Buffer.from(
+          content.toString('utf8').replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ''),
+          'utf8'
+        );
+      }
+      const hash = crypto.createHash('sha256').update(content).digest('hex');
       out[rel] = hash;
     }
   }

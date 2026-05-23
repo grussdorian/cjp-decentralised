@@ -1,12 +1,12 @@
 {
-  "cid": "bafybeietylsaxjhzewijusuoilwvii7g5jryi24fpdvv6vl4kub27vg5qq",
-  "version": 10,
-  "timestamp": 1779571312,
-  "note": "clean todo mirror, 2-min window for live demo",
+  "cid": "bafybeict6qjgzzp2wvbktlz5i7adk2m7wblsfum27ce3v5qpt2iishuzjm",
+  "version": 11,
+  "timestamp": 1779573255,
+  "note": "fix: strip script tags before hashing — CF-injection resilient verify",
   "signatures": [
     {
       "signer": "c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3",
-      "signature": "e5e96393d5838780819d0cef5b794d1a2bc5110140aa3b93c922f326fbfd39712aeaf93d18f243e6ef80c2bcb6d82e62c5ba82b159e6be54cc2579760b8bcb00"
+      "signature": "66b584a205fd888f00b0db4f1df6a0501a22de57702888326228c0561a6cc6182a99721b96bf7f8bbae0c5bf002c2c1c4ef05dc6086e9c65c738991154596002"
     }
   ]
 }
