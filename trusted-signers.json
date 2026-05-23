@@ -1,0 +1,4 @@
+{
+  "signers": [],
+  "_comment": "Add Ed25519 public keys (hex) of authorized publishers here. Any one key can sign a valid latest.json update."
+}

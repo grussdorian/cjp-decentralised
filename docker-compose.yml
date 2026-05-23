@@ -1,0 +1,43 @@
+services:
+  ipfs:
+    image: ipfs/kubo:latest
+    restart: unless-stopped
+    ports:
+      - "4001:4001"   # swarm
+      - "127.0.0.1:5001:5001"  # API (local only)
+      - "127.0.0.1:8080:8080"  # gateway (local only)
+    volumes:
+      - ipfs_data:/data/ipfs
+
+  mirror:
+    image: ghcr.io/cjp-decentralized/mirror:latest
+    restart: unless-stopped
+    depends_on:
+      - ipfs
+    environment:
+      IPFS_API: "http://ipfs:5001"
+      POLL_INTERVAL: "900"  # seconds
+    volumes:
+      - ./trusted-signers.json:/app/trusted-signers.json:ro
+      - ./latest.json:/app/latest.json:ro
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    volumes:
+      - ipfs_data:/data/ipfs:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+  tor:
+    image: dperson/torproxy:latest
+    restart: unless-stopped
+    environment:
+      - HIDDEN_SERVICE=nginx:80
+    volumes:
+      - tor_data:/var/lib/tor
+
+volumes:
+  ipfs_data:
+  tor_data:

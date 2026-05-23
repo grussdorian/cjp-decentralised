@@ -1,0 +1,9 @@
+dist/
+node_modules/
+*.key
+*.pem
+.env
+packages/mirror/mirror
+packages/mirror/mirror-*
+packages/publisher/publisher
+packages/publisher/publisher-*

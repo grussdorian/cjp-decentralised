@@ -1,0 +1,40 @@
+name: Build and Upload to IPFS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build site (all languages)
+        run: node scripts/build.js
+
+      - name: Upload to web3.storage
+        id: ipfs
+        env:
+          WEB3_STORAGE_TOKEN: ${{ secrets.WEB3_STORAGE_TOKEN }}
+        run: |
+          npm install -g @web3-storage/w3cli
+          w3 login --no-browser
+          CID=$(w3 put dist/ --no-wrap --json | jq -r '.root."/"."/"')
+          echo "cid=$CID" >> "$GITHUB_OUTPUT"
+          echo "## New IPFS CID" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "$CID" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "Next step: run \`publisher sign --cid $CID\` locally to publish." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload dist as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-dist
+          path: dist/
+          retention-days: 7
