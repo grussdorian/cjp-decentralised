@@ -1,13 +1,16 @@
 // Nostr form submission handler.
-// TODO: Replace CDN import with local bundle: import { ... } from '/js/nostr-tools.bundle.js';
+// Sign-up submissions are age-encrypted to all keys listed in PARTY_AGE_KEYS.
+// Any single key holder can independently decrypt — no coordination needed.
+// TODO: Replace CDN imports with local bundles.
 import {
   generateSecretKey,
   getPublicKey,
   finalizeEvent,
-  nip04,
 } from 'https://esm.sh/nostr-tools@2.10.4';
 
-import { RELAYS, PARTY_PUBKEY, DEMAND_TAG } from './relays.js';
+import { encrypt as ageEncrypt } from 'https://esm.sh/age-encryption@0.1.2';
+
+import { RELAYS, PARTY_AGE_KEYS, DEMAND_TAG } from './relays.js';
 
 async function broadcast(event) {
   const results = await Promise.allSettled(
@@ -45,7 +48,9 @@ function setStatus(form, type, text) {
   el.textContent = text;
 }
 
-// ── Join form (encrypted NIP-04 DM to party pubkey) ──
+// ── Join form (age-encrypted to all party member keys, posted as Nostr event) ──
+// PARTY_AGE_KEYS is a list of age1... public keys from party-keys.txt.
+// Any single key holder can independently decrypt the submission.
 export async function handleJoin(form) {
   const btn = form.querySelector('[type=submit]');
   btn.disabled = true;
@@ -64,20 +69,25 @@ export async function handleJoin(form) {
     btn.disabled = false;
     return;
   }
-  if (PARTY_PUBKEY === 'REPLACE_WITH_PARTY_PUBKEY_HEX') {
-    setStatus(form, 'err', 'Party key not configured yet. Try again soon.');
+  const activeKeys = PARTY_AGE_KEYS.filter(k => !k.startsWith('#') && k.trim());
+  if (activeKeys.length === 0) {
+    setStatus(form, 'err', 'Party keys not configured yet. Try again soon.');
     btn.disabled = false;
     return;
   }
 
   try {
+    // age-encrypt the payload to ALL party member keys simultaneously.
+    // Each member can independently decrypt with their own private key.
+    const plaintext = new TextEncoder().encode(JSON.stringify({ name, state, ts: Date.now() }));
+    const ciphertext = await ageEncrypt(plaintext, activeKeys);
+    const content = btoa(String.fromCharCode(...ciphertext)); // base64
+
     const sk = generateSecretKey();
-    const pk = getPublicKey(sk);
-    const content = await nip04.encrypt(sk, PARTY_PUBKEY, JSON.stringify({ name, state }));
     const event = finalizeEvent({
-      kind: 4,
+      kind: 1337,  // custom kind: CJP encrypted signup
       created_at: Math.floor(Date.now() / 1000),
-      tags: [['p', PARTY_PUBKEY]],
+      tags: [['t', 'cjp-signup']],
       content,
     }, sk);
 

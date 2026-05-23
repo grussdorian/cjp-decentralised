@@ -1,0 +1,19 @@
+[Unit]
+Description=CJP Mirror Daemon
+After=network-online.target ipfs.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/cjp-mirror \
+  --ipfs-api http://localhost:5001 \
+  --signers /etc/cjp/trusted-signers.json \
+  --state /var/lib/cjp/mirror-state.json \
+  --poll 900
+Restart=on-failure
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
