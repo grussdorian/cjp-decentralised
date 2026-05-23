@@ -3,9 +3,11 @@ name: Build and Upload to IPFS
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
-  build-and-upload:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,7 +16,28 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Build site (all languages)
+      - name: Build site
+        run: node scripts/build.js
+
+      - name: Upload dist as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-dist
+          path: dist/
+          retention-days: 7
+
+  upload:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build site
         run: node scripts/build.js
 
       - name: Upload to web3.storage
@@ -31,10 +54,3 @@ jobs:
           echo "$CID" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           echo "Next step: run \`publisher sign --cid $CID\` locally to publish." >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload dist as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: site-dist
-          path: dist/
-          retention-days: 7
