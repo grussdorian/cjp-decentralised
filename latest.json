@@ -1,12 +1,12 @@
 {
-  "cid": "bafybeiaadodq5fgukmfswu2ap7rclxj43aemva65p2c367xjglgjwo7264",
-  "version": 4,
-  "timestamp": 1779565656,
-  "note": "add signer workflow to trust.html",
+  "cid": "bafybeidkheetxuyw3kb2q5bcudkow63hx244lfphjwi2nhjwsduzqx3loq",
+  "version": 5,
+  "timestamp": 1779566466,
+  "note": "local bundles, mirror CID clickable, no-cache headers, two mirror instances",
   "signatures": [
     {
       "signer": "c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3",
-      "signature": "d82f2bc55907ab59dc38f5586c197ae811990f7e55d26b64d122a2dd5b955b14f0f677169c64e6d245ff22a941672c43ac6c42329bb56e55c19ebea2c6d0420f"
+      "signature": "db49c67ab8118ae2a8860ea344e4389346205867eeeef9d7872acb1ab1b34c448ff699314162bb1457ab15e9f518af9d5109549ae9973dbb5e406773842b740d"
     }
   ]
 }

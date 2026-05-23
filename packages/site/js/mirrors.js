@@ -25,7 +25,11 @@ export async function loadMirrorStats(countEl, listEl) {
           const data = JSON.parse(ev.content);
           const div = document.createElement('div');
           div.className = 'stat-box';
-          div.innerHTML = `<code>${peer.slice(0, 16)}…</code><br><small style="color:var(--muted)">${data.country || 'Unknown'} · CID ${(data.cid || '').slice(0, 12)}…</small>`;
+          const cidShort = (data.cid || '').slice(0, 12) + '…';
+          const cidLink  = data.cid
+            ? `<a href="https://ipfs.io/ipfs/${data.cid}" target="_blank" rel="noopener noreferrer" style="color:var(--muted)">CID ${cidShort}</a>`
+            : 'CID unknown';
+          div.innerHTML = `<code>${peer.slice(0, 16)}…</code><br><small style="color:var(--muted)">${data.country || 'Unknown'} · ${cidLink}</small>`;
           listEl.appendChild(div);
         } catch {}
       }

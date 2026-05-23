@@ -6,9 +6,9 @@ import {
   generateSecretKey,
   getPublicKey,
   finalizeEvent,
-} from 'https://esm.sh/nostr-tools@2.10.4';
+} from './nostr-tools.bundle.js';
 
-import { Encrypter } from 'https://esm.sh/age-encryption@0.3.0';
+import { Encrypter } from './age-encryption.bundle.js';
 
 import { RELAYS, PARTY_AGE_KEYS, DEMAND_TAG } from './relays.js';
 

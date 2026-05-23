@@ -84,12 +84,16 @@ ipfs pin add &lt;CID&gt;</code></pre>
     document.getElementById('mirror-count'),
     document.getElementById('mirror-list')
   );
-  fetch('./latest.json')
+  // latest.json lives in the repo root, not in dist/, so fetch from GitHub.
+  fetch('https://raw.githubusercontent.com/grussdorian/cjp-decentralised/main/latest.json', { cache: 'no-cache' })
     .then(r => r.json())
     .then(d => {
       const el = document.getElementById('current-cid');
-      if (d.cid) el.textContent = d.cid;
-      else el.textContent = 'not yet published';
+      if (d.cid) {
+        el.innerHTML = `<a href="https://ipfs.io/ipfs/${d.cid}" target="_blank" rel="noopener noreferrer" style="color:var(--text);text-decoration:underline;text-underline-offset:3px">${d.cid}</a>`;
+      } else {
+        el.textContent = 'not yet published';
+      }
     })
     .catch(() => {
       document.getElementById('current-cid').textContent = 'unavailable';
