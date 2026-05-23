@@ -42,8 +42,15 @@
         <label for="country">Country</label>
         <input type="text" id="country" name="country" placeholder="Country" required autocomplete="off" value="India">
       </div>
-      <div class="fg">
-        <frc-captcha data-sitekey="REPLACE_WITH_FRIENDLYCAPTCHA_SITEKEY"></frc-captcha>
+      <div class="fg" id="captcha-wrap">
+        <div id="captcha-primary">
+          <div class="cf-turnstile" data-sitekey="REPLACE_WITH_TURNSTILE_SITEKEY"></div>
+        </div>
+        <div id="captcha-fallback" style="display:none">
+          <div class="mcaptcha__widget-container"
+               data-sitekey="REPLACE_WITH_MCAPTCHA_SITEKEY"
+               data-api-url="REPLACE_WITH_MCAPTCHA_URL"></div>
+        </div>
       </div>
       <button type="submit" class="btn">Sign the Petition</button>
       <div class="status" role="alert"></div>
@@ -60,7 +67,31 @@
 <footer>
   This site is <a href="mirror.html">mirrored across hundreds of nodes</a> and cannot be taken down.
 </footer>
-<script type="module" src="https://cdn.jsdelivr.net/npm/friendly-challenge@0.9.12/widget.module.min.js" crossorigin="anonymous" async defer></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<script>
+  setTimeout(function() {
+    var p = document.getElementById('captcha-primary');
+    if (p && !p.querySelector('iframe')) {
+      p.style.display = 'none';
+      var fb = document.getElementById('captcha-fallback');
+      fb.style.display = 'block';
+      var container = fb.querySelector('.mcaptcha__widget-container');
+      var url = container && container.dataset.apiUrl;
+      if (url && url.indexOf('REPLACE') === -1) {
+        var s = document.createElement('script');
+        s.src = url + '/widget.bundled.js';
+        document.head.appendChild(s);
+      }
+    }
+  }, 4000);
+  document.addEventListener('mcaptcha-solved', function(e) {
+    var form = document.getElementById('demand-form');
+    var inp = form.querySelector('[name="mcaptcha-token"]') || document.createElement('input');
+    inp.type = 'hidden'; inp.name = 'mcaptcha-token';
+    inp.value = (e.detail && e.detail.token) ? e.detail.token : String(e.detail);
+    form.appendChild(inp);
+  });
+</script>
 <script type="module">
   import { handleDemand } from './js/forms.js';
   document.getElementById('demand-form').addEventListener('submit', (e) => handleDemand(e.target));

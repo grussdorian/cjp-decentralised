@@ -38,6 +38,52 @@ services:
     volumes:
       - tor_data:/var/lib/tor
 
+  # ── mCaptcha (self-hosted PoW captcha) ──────────────────────────────────────
+  # Only starts when you explicitly request the captcha profile:
+  #   docker compose --profile captcha up -d
+  # After starting, register an account at http://localhost:7000, create a
+  # sitekey, then set MCAPTCHA_SITEKEY and MCAPTCHA_URL in relays.js.
+  mcaptcha:
+    image: mcaptcha/mcaptcha:latest
+    profiles: [captcha]
+    restart: unless-stopped
+    depends_on:
+      - mcaptcha-db
+      - mcaptcha-cache
+    ports:
+      - "127.0.0.1:7000:7000"
+    environment:
+      MCAPTCHA_redis_url: "redis://mcaptcha-cache"
+      MCAPTCHA_database_url: "postgres://mcaptcha:mcaptcha@mcaptcha-db/mcaptcha"
+      MCAPTCHA_server_domain: "REPLACE_WITH_YOUR_DOMAIN"
+      MCAPTCHA_server_url_prefix: "https://REPLACE_WITH_YOUR_DOMAIN"
+      MCAPTCHA_server_ip: "0.0.0.0"
+      MCAPTCHA_server_port: "7000"
+      MCAPTCHA_account_secret: "REPLACE_WITH_RANDOM_64_CHAR_SECRET"
+      MCAPTCHA_cookie_secret: "REPLACE_WITH_RANDOM_64_CHAR_SECRET"
+      MCAPTCHA_allow_registration: "false"
+      MCAPTCHA_allow_demo: "false"
+
+  mcaptcha-db:
+    image: postgres:15-alpine
+    profiles: [captcha]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mcaptcha
+      POSTGRES_PASSWORD: mcaptcha
+      POSTGRES_DB: mcaptcha
+    volumes:
+      - mcaptcha_db:/var/lib/postgresql/data
+
+  mcaptcha-cache:
+    image: redis:7-alpine
+    profiles: [captcha]
+    restart: unless-stopped
+    volumes:
+      - mcaptcha_cache:/data
+
 volumes:
   ipfs_data:
   tor_data:
+  mcaptcha_db:
+  mcaptcha_cache:

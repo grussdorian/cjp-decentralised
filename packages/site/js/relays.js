@@ -32,3 +32,9 @@ export const MIRROR_TAG = 'cjp-mirrors';
 
 // Tag used for update notifications
 export const UPDATE_TAG = 'cjp-update';
+
+// Captcha sitekeys. Turnstile is primary (free, unlimited).
+// mCaptcha is self-hosted fallback shown when Turnstile fails to load (Tor, CDN blocks).
+export const TURNSTILE_SITEKEY = 'REPLACE_WITH_TURNSTILE_SITEKEY';
+export const MCAPTCHA_SITEKEY  = 'REPLACE_WITH_MCAPTCHA_SITEKEY';
+export const MCAPTCHA_URL      = 'REPLACE_WITH_MCAPTCHA_URL';
