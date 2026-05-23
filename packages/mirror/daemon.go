@@ -1,0 +1,140 @@
+package main
+
+import (
+	"crypto/ed25519"
+	"fmt"
+	"log"
+	"time"
+)
+
+type Daemon struct {
+	cfg         Config
+	ipfs        *ipfsClient
+	trustedKeys []ed25519.PublicKey
+	state       *State
+	peerID      string
+}
+
+func newDaemon(cfg Config) (*Daemon, error) {
+	state, err := loadState(cfg.StateFile)
+	if err != nil {
+		return nil, fmt.Errorf("load state: %w", err)
+	}
+	ensureNostrKey(state)
+
+	keys, err := loadSigners(cfg.SignersFile)
+	if err != nil {
+		log.Printf("warning: %v — will reject all updates until signers are configured", err)
+		keys = nil
+	}
+
+	ipfs := newIPFSClient(cfg.IPFSApi)
+
+	peerID := ""
+	if ipfs.Ping() {
+		peerID, _ = ipfs.PeerID()
+		log.Printf("IPFS node online, peer ID: %s", peerID)
+	} else {
+		log.Printf("warning: IPFS daemon not reachable at %s", cfg.IPFSApi)
+	}
+
+	return &Daemon{
+		cfg:         cfg,
+		ipfs:        ipfs,
+		trustedKeys: keys,
+		state:       state,
+		peerID:      peerID,
+	}, nil
+}
+
+// Run starts the poll loop. It blocks until stop is closed.
+func (d *Daemon) Run(stop <-chan struct{}) {
+	log.Printf("Mirror daemon started (poll interval: %s)", d.cfg.PollInterval)
+
+	// Run once immediately, then tick.
+	d.poll()
+
+	ticker := time.NewTicker(d.cfg.PollInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			d.poll()
+		case <-stop:
+			log.Println("Daemon shutting down.")
+			return
+		}
+	}
+}
+
+func (d *Daemon) poll() {
+	urls := buildLatestURLs(d.cfg)
+	latest, source, err := fetchLatest(urls)
+	if err != nil {
+		log.Printf("fetch latest.json: %v", err)
+		return
+	}
+	log.Printf("Fetched latest.json v%d from %s (CID: %s)", latest.Version, source, latest.CID[:12]+"...")
+
+	// Verify signature
+	if len(d.trustedKeys) == 0 {
+		log.Println("No trusted signers configured — skipping pin")
+		return
+	}
+	if err := verifyLatest(d.trustedKeys, latest.CID, latest.Version, latest.Timestamp, latest.Signer, latest.Signature); err != nil {
+		log.Printf("Signature verification failed: %v — ignoring update", err)
+		return
+	}
+
+	// Already on this version?
+	if latest.CID == d.state.PinnedCID {
+		log.Printf("Already pinned v%d, nothing to do", latest.Version)
+		d.sendHeartbeat(latest)
+		return
+	}
+	if latest.Version <= d.state.PinnedVer && d.state.PinnedVer > 0 {
+		log.Printf("Received v%d but already have v%d — ignoring downgrade", latest.Version, d.state.PinnedVer)
+		return
+	}
+
+	// Pin new CID
+	log.Printf("Pinning new CID %s (v%d)...", latest.CID, latest.Version)
+	if !d.ipfs.Ping() {
+		log.Println("IPFS daemon unreachable — cannot pin")
+		return
+	}
+	if err := d.ipfs.PinAdd(latest.CID); err != nil {
+		log.Printf("pin add failed: %v", err)
+		return
+	}
+	log.Printf("Pinned v%d successfully", latest.Version)
+
+	// Unpin old CID (best-effort, grace period)
+	if d.state.PinnedCID != "" && d.state.PinnedCID != latest.CID {
+		log.Printf("Unpinning old CID %s...", d.state.PinnedCID[:12]+"...")
+		d.ipfs.PinRm(d.state.PinnedCID)
+	}
+
+	// Update state
+	prev := d.state.PinnedCID
+	d.state.PinnedCID = latest.CID
+	d.state.PinnedVer = latest.Version
+	if err := saveState(d.cfg.StateFile, d.state); err != nil {
+		log.Printf("save state: %v", err)
+	}
+	_ = prev
+
+	d.sendHeartbeat(latest)
+}
+
+func (d *Daemon) sendHeartbeat(latest *Latest) {
+	if d.state.NostrSK == "" {
+		return
+	}
+	if err := broadcastHeartbeat(d.state.NostrSK, d.peerID, latest.CID, d.cfg.Country, latest.Version); err != nil {
+		log.Printf("heartbeat: %v", err)
+	} else {
+		log.Println("Heartbeat sent to Nostr")
+	}
+}

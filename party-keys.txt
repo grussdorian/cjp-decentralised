@@ -1,0 +1,12 @@
+# CJP party member age public keys.
+# Any party member whose key is listed here can independently decrypt sign-up submissions.
+# Add a new line for each trusted party member after they run:
+#   age-keygen    (and share only their PUBLIC key here, never the private key)
+#
+# Format: one age1... public key per line. Lines starting with # are ignored.
+#
+# REPLACE THE PLACEHOLDER BELOW with real age public keys before going live.
+# Example:
+#   age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p
+#
+# age1REPLACE_WITH_REAL_PARTY_MEMBER_KEY

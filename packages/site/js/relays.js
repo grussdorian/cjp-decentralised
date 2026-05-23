@@ -15,9 +15,14 @@ export const RELAYS = [
   'wss://nostr.bitcoiner.social',
 ];
 
-// Party's Nostr public key (hex) — sign-up DMs are encrypted to this key.
-// Replace with the actual party key after running: publisher keygen
-export const PARTY_PUBKEY = 'REPLACE_WITH_PARTY_PUBKEY_HEX';
+// Party member age public keys for sign-up encryption.
+// Add one age1... key per line for each trusted party member.
+// Any single key holder can independently decrypt submissions.
+// Generate a key pair with: age-keygen
+// Add only the public key here (from stdout of age-keygen).
+export const PARTY_AGE_KEYS = [
+  // 'age1REPLACE_WITH_REAL_KEY',
+];
 
 // Tag used for public demand/petition events
 export const DEMAND_TAG = 'cjp-demand';
