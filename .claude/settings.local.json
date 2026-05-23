@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:dictionary.cambridge.org)",
+      "WebFetch(domain:www.shabdkosh.com)",
+      "WebFetch(domain:en.wiktionary.org)",
+      "Bash(git init *)",
+      "Bash(git add *)"
+    ]
+  }
+}
