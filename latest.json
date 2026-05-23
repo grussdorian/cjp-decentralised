@@ -1,12 +1,12 @@
 {
-  "cid": "bafybeict6qjgzzp2wvbktlz5i7adk2m7wblsfum27ce3v5qpt2iishuzjm",
-  "version": 11,
-  "timestamp": 1779573255,
-  "note": "fix: strip script tags before hashing — CF-injection resilient verify",
+  "cid": "bafybeieq24kmesov3ibtezgrrti4wijq5sohu5run5hqgkb352vr4sqe5i",
+  "version": 13,
+  "timestamp": 1779579070,
+  "note": "fix: center nav text vertically with equal spacing",
   "signatures": [
     {
       "signer": "c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3",
-      "signature": "66b584a205fd888f00b0db4f1df6a0501a22de57702888326228c0561a6cc6182a99721b96bf7f8bbae0c5bf002c2c1c4ef05dc6086e9c65c738991154596002"
+      "signature": "059b06a3cfe205671382862e6cc25717d3aeccb9e08d39bf0214b0daee52f1b359d877c216bace0cf91592caa92cf135028a4bd8079226198ca08fd00317590b"
     }
   ]
 }

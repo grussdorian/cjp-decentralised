@@ -15,6 +15,8 @@ type Config struct {
 	StateFile    string        // Path to persisted daemon state
 	Country      string        // Reported country in heartbeat (optional)
 	MirrorURL    string        // Public URL of this mirror's clearweb endpoint (optional, e.g. https://mymirror.example.com)
+	GatewayURL   string        // IPFS HTTP gateway URL, e.g. http://localhost:8080 (used to fetch content after pinning)
+	ServeDir     string        // If set, populate this directory with site files after each successful pin
 }
 
 func defaultConfig() Config {
@@ -28,6 +30,8 @@ func defaultConfig() Config {
 		StateFile:   envOr("STATE_FILE", home+"/.cjp/mirror-state.json"),
 		Country:   envOr("COUNTRY", ""),
 		MirrorURL: envOr("MIRROR_URL", ""),
+		GatewayURL: envOr("IPFS_GATEWAY", ""),
+		ServeDir:  envOr("SERVE_DIR", ""),
 	}
 }
 

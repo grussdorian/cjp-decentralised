@@ -16,18 +16,21 @@ services:
       - ipfs
     environment:
       IPFS_API: "http://ipfs:5001"
+      IPFS_GATEWAY: "http://ipfs:8080"
       POLL_INTERVAL: "900"  # seconds
+      SERVE_DIR: "/var/cjp/html"
     volumes:
       - ./trusted-signers.json:/app/trusted-signers.json:ro
       - ./latest.json:/app/latest.json:ro
+      - html_data:/var/cjp/html
 
   nginx:
     image: nginx:alpine
     restart: unless-stopped
     ports:
-      - "8081:80"
+      - "${NGINX_PORT:-80}:80"
     volumes:
-      - ipfs_data:/data/ipfs:ro
+      - html_data:/var/cjp/html:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
 
   tor:
@@ -40,4 +43,5 @@ services:
 
 volumes:
   ipfs_data:
+  html_data:
   tor_data:

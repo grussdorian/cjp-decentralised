@@ -130,6 +130,16 @@ func (d *Daemon) poll() {
 	}
 	_ = prev
 
+	// Populate serve directory so clearweb mirrors auto-update.
+	if d.cfg.ServeDir != "" && d.cfg.GatewayURL != "" {
+		log.Printf("Populating serve dir %s from CID %s...", d.cfg.ServeDir, latest.CID)
+		if err := d.ipfs.GetTar(latest.CID, d.cfg.ServeDir); err != nil {
+			log.Printf("populate serve dir: %v", err)
+		} else {
+			log.Printf("Serve dir populated with v%d", latest.Version)
+		}
+	}
+
 	d.sendHeartbeat(latest)
 }
 
