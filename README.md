@@ -56,7 +56,11 @@ publisher keygen --out ~/.cjp/
 
 - **Hosting**: IPFS (content-addressed, anyone can pin)
 - **Mutability**: IPNS + ENS content hash (Gnosis Safe multisig)
-- **Form backend**: Nostr protocol (sign-up encrypted NIP-04 DMs; petition public events)
-- **Captcha**: FriendlyCaptcha (proof-of-work, no Google)
+- **Form backend**: Nostr protocol (sign-up encrypted age DMs; petition public events)
+- **Spam protection**: Browser-only SHA-256 proof-of-work (no server, no CDN, works on Tor)
 - **Mirror sync**: Ed25519-signed `latest.json` polled every 15 min
 - **Mirror registry**: Nostr heartbeat events tagged `#cjp-mirrors`
+
+## License
+
+[MIT](LICENSE) — copy, modify, redistribute freely. See [CONTRIBUTING.md](CONTRIBUTING.md) for fork guidance.
