@@ -122,6 +122,10 @@ Signing authority is intentionally restricted. Contact the repository owner dire
 - **Mirror sync**: Ed25519-signed `latest.json` polled every 15 min
 - **Mirror registry**: Nostr heartbeat events tagged `#cjp-mirrors`
 
+## Contributing
+
+If you are a developer, you may contribute to this repo — see the [open issues](https://github.com/grussdorian/cjp-decentralised/issues) for pending work. Good first areas: Tor hidden service (#7) and IPNS setup (#9).
+
 ## License
 
 [MIT](LICENSE) — copy, modify, redistribute freely. See [CONTRIBUTING.md](CONTRIBUTING.md) for fork guidance.
