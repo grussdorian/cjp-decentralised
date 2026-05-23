@@ -38,14 +38,11 @@
         <label for="location">State, territory, or country</label>
         <input type="text" id="location" name="location" placeholder="e.g. Maharashtra, New York, Berlin" required autocomplete="off">
       </div>
-      <div class="fg" id="captcha-wrap">
-        <div id="captcha-primary">
-          <div class="cf-turnstile" data-sitekey="REPLACE_WITH_TURNSTILE_SITEKEY"></div>
-        </div>
-        <div id="captcha-fallback" style="display:none">
-          <div class="mcaptcha__widget-container"
-               data-sitekey="REPLACE_WITH_MCAPTCHA_SITEKEY"
-               data-api-url="REPLACE_WITH_MCAPTCHA_URL"></div>
+      <div class="fg">
+        <input type="hidden" name="pow-token" id="pow-token">
+        <div class="pow-widget" id="pow-widget">
+          <div class="pow-spinner" id="pow-spinner"></div>
+          <span id="pow-text">Verifying you're human…</span>
         </div>
       </div>
       <button type="submit" class="btn">Join Now</button>
@@ -62,32 +59,21 @@
 <footer>
   This site is <a href="mirror.html">mirrored across hundreds of nodes</a> and cannot be taken down.
 </footer>
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <script>
-  // If Turnstile hasn't rendered after 4s (Tor, CDN block), switch to self-hosted mCaptcha
-  setTimeout(function() {
-    var p = document.getElementById('captcha-primary');
-    if (p && !p.querySelector('iframe')) {
-      p.style.display = 'none';
-      var fb = document.getElementById('captcha-fallback');
-      fb.style.display = 'block';
-      var container = fb.querySelector('.mcaptcha__widget-container');
-      var url = container && container.dataset.apiUrl;
-      if (url && url.indexOf('REPLACE') === -1) {
-        var s = document.createElement('script');
-        s.src = url + '/widget.bundled.js';
-        document.head.appendChild(s);
+  (function() {
+    var challenge = 'cjp:' + Date.now() + ':' + Math.random().toString(36).slice(2);
+    var worker = new Worker(new URL('./js/pow-worker.js', location.href).href);
+    worker.onmessage = function(e) {
+      if (e.data.solved) {
+        document.getElementById('pow-token').value = e.data.challenge + ':' + e.data.nonce;
+        var w = document.getElementById('pow-widget');
+        w.classList.add('done');
+        document.getElementById('pow-spinner').style.display = 'none';
+        document.getElementById('pow-text').textContent = '✓ Human verified';
       }
-    }
-  }, 4000);
-  // Store mCaptcha token into a hidden input when PoW completes
-  document.addEventListener('mcaptcha-solved', function(e) {
-    var form = document.getElementById('join-form');
-    var inp = form.querySelector('[name="mcaptcha-token"]') || document.createElement('input');
-    inp.type = 'hidden'; inp.name = 'mcaptcha-token';
-    inp.value = (e.detail && e.detail.token) ? e.detail.token : String(e.detail);
-    form.appendChild(inp);
-  });
+    };
+    worker.postMessage({ challenge: challenge, difficulty: 20 });
+  })();
 </script>
 <script type="module">
   import { handleJoin } from './js/forms.js';
