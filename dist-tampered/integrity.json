@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-23T20:50:28.088Z",
+  "generated": "2026-05-23T21:21:26.713Z",
   "files": {
     "bn/demand.html": "b761b5af9f57c284145ef375bdb8cb55347901b168573d3ec66e44784741250c",
     "bn/index.html": "4e5d270121ddc90da0fcef2664bee25cd418405f969b5421372fb1ecc5d40286",
@@ -15,7 +15,7 @@
     "join.html": "bccc24499f76835993008cbb94cfa29b270bc30f4e276fcd2a99100b5a9cbc92",
     "js/age-encryption.bundle.js": "ea0a0ee5eadd2276fecc64a911979285f7dbbd4a290abfcd66c6ae65f36c3026",
     "js/forms.js": "bebb7749c179da7433ed4507d1035e7ab6bd4dc3cd83286ccadb3ed6234cdbeb",
-    "js/mirrors.js": "ef92114b2df23817956baa3ebe71422edc07807068ca432c60bac8bde0629494",
+    "js/mirrors.js": "041d19c7466137b5cb9cc9c14f703b9ef6f50f12fa649a7c193ec0b020ea108f",
     "js/nostr-tools.bundle.js": "eda4a17ecbef9b28b040f47225d75bcce49b3e27a2c08bd48cba8e3f1d47d79b",
     "js/pow-worker.js": "9a8a072aa4ecd33a0585e1fc11744588017978161b2fcb49670cacda607e845f",
     "js/relays.js": "372e056cebe396299e54d71d9b5228ff7389df821f509e8b8bbdc23d9b385e14",
