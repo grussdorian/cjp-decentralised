@@ -1,12 +1,12 @@
 {
-  "cid": "bafybeiae4vgxpphj4wnkdgzeuyxkvwlao5inodkjwxlmjotd6hwmixr53y",
-  "version": 15,
-  "timestamp": 1779580289,
-  "note": "feat: mirror list auto-refreshes every 30s, add mirror.service",
+  "cid": "bafybeiddnhrct7exgum3qpcckmrwnlp35b7ax3bbrxshrymx7yyvf67l3e",
+  "version": 16,
+  "timestamp": 1779580401,
+  "note": "fix: mirror daemon heartbeats every 30s independently of poll cycle",
   "signatures": [
     {
       "signer": "c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3",
-      "signature": "11507ad33cd149fecef8d329b0f43db10966e4636697eecb7bf99dd471f903ef1075438b4f6cf84e5b2ecfc6c8eefdc2782ef3c54096fd430d2f9f34cb54e807"
+      "signature": "c10b53471e6f35a5865e4b523681268069d8ef647e0f00d3ef447b13b6598feb8b9b9c2654172ca5e49130b13f3b042e8b994c68c1dd849421e47a64cc8f5107"
     }
   ]
 }

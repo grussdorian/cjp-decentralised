@@ -50,25 +50,37 @@ func newDaemon(cfg Config) (*Daemon, error) {
 	}, nil
 }
 
-// Run starts the poll loop. It blocks until stop is closed.
+// Run starts the poll loop and heartbeat ticker. Blocks until stop is closed.
 func (d *Daemon) Run(stop <-chan struct{}) {
-	log.Printf("Mirror daemon started (poll interval: %s)", d.cfg.PollInterval)
+	log.Printf("Mirror daemon started (poll: %s, heartbeat: 30s)", d.cfg.PollInterval)
 
-	// Run once immediately, then tick.
 	d.poll()
 
-	ticker := time.NewTicker(d.cfg.PollInterval)
-	defer ticker.Stop()
+	pollTicker := time.NewTicker(d.cfg.PollInterval)
+	defer pollTicker.Stop()
+
+	beatTicker := time.NewTicker(30 * time.Second)
+	defer beatTicker.Stop()
 
 	for {
 		select {
-		case <-ticker.C:
+		case <-pollTicker.C:
 			d.poll()
+		case <-beatTicker.C:
+			d.heartbeat()
 		case <-stop:
 			log.Println("Daemon shutting down.")
 			return
 		}
 	}
+}
+
+func (d *Daemon) heartbeat() {
+	if d.state.PinnedCID == "" {
+		return
+	}
+	latest := &Latest{CID: d.state.PinnedCID, Version: d.state.PinnedVer}
+	d.sendHeartbeat(latest)
 }
 
 func (d *Daemon) poll() {
