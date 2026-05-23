@@ -52,7 +52,17 @@ function buildIntegrity(dir, base) {
   return out;
 }
 
-if (fs.existsSync(DIST)) fs.rmSync(DIST, { recursive: true });
+// Clear contents without removing the directory itself — preserves Docker bind mounts.
+// Deleting the directory breaks any container whose volume is mounted to this path.
+if (fs.existsSync(DIST)) {
+  for (const entry of fs.readdirSync(DIST, { withFileTypes: true })) {
+    const full = path.join(DIST, entry.name);
+    if (entry.isDirectory()) fs.rmSync(full, { recursive: true });
+    else fs.unlinkSync(full);
+  }
+} else {
+  fs.mkdirSync(DIST, { recursive: true });
+}
 copyTree(SRC, DIST);
 
 const files = buildIntegrity(DIST);
