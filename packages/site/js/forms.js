@@ -37,8 +37,13 @@ function publishToRelay(url, event) {
 }
 
 function getCaptchaToken(form) {
-  const el = form.querySelector('frc-captcha');
-  return el ? el.dataset.solution || '' : '';
+  // Turnstile injects a hidden input cf-turnstile-response when solved
+  const t = form.querySelector('[name="cf-turnstile-response"]');
+  if (t?.value) return t.value;
+  // mCaptcha token stored by the mcaptcha-solved event listener
+  const m = form.querySelector('[name="mcaptcha-token"]');
+  if (m?.value) return m.value;
+  return '';
 }
 
 function setStatus(form, type, text) {
