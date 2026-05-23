@@ -113,11 +113,22 @@ Signing authority is intentionally restricted. Contact the repository owner dire
 | ENS | `cockroachjanataparty.eth` — pending on-chain registration |
 | Tor | pending hidden service setup |
 
+## Form data persistence
+
+Sign-up and petition submissions are stored on Nostr relays — a separate network from IPFS. This means:
+
+- **Version changes do not affect submissions.** Publishing a new site version updates the IPFS CID and `latest.json`, but relay data is never touched. A submission made on v1 is still retrievable on v50.
+- **No central server holds the data.** Submissions are broadcast to 12 independent relays across jurisdictions simultaneously. No single relay going down loses any data.
+- **Sign-ups are end-to-end encrypted.** Each submission is age-encrypted to the party's public key before it leaves the browser. Only the key holder can read it — relays store opaque ciphertext.
+- **Petitions are public and verifiable.** Demand form entries are signed Nostr events anyone can count on any relay — no need to trust the party's tally.
+
+**Long-term retention note:** Public relays may expire events after 30–90 days to manage storage. Running a private relay ensures permanent retention. See issue [#7](https://github.com/grussdorian/cjp-decentralised/issues) for context.
+
 ## Tech stack
 
 - **Hosting**: IPFS (content-addressed, anyone can pin)
 - **Mutability**: IPNS + ENS content hash (Gnosis Safe multisig)
-- **Form backend**: Nostr protocol (sign-up age-encrypted DMs; petition public events)
+- **Form backend**: Nostr protocol (sign-up age-encrypted to party key; petition public events)
 - **Spam protection**: Browser-only SHA-256 proof-of-work (no server, no CDN, works on Tor)
 - **Mirror sync**: Ed25519-signed `latest.json` polled every 15 min
 - **Mirror registry**: Nostr heartbeat events tagged `#cjp-mirrors`
