@@ -7,7 +7,7 @@ export async function loadMirrorStats(countEl, listEl) {
   const since = Math.floor(Date.now() / 1000) - ONE_HOUR;
   const filter = { kinds: [1], '#t': [MIRROR_TAG], since, limit: 200 };
 
-  const seen = new Map(); // peer_id → latest event
+  const seen = new Map(); // nostr pubkey → latest event
 
   await Promise.allSettled(RELAYS.slice(0, 5).map(url => queryRelay(url, filter, seen)));
 
@@ -48,13 +48,10 @@ function queryRelay(url, filter, seen) {
       if (data[0] === 'EOSE') { clearTimeout(timer); ws.close(); resolve(); return; }
       if (data[0] === 'EVENT') {
         const ev = data[2];
-        try {
-          const d = JSON.parse(ev.content);
-          const peer = d.peer_id || ev.pubkey;
-          if (!seen.has(peer) || seen.get(peer).created_at < ev.created_at) {
-            seen.set(peer, ev);
-          }
-        } catch {}
+        const peer = ev.pubkey;
+        if (!seen.has(peer) || seen.get(peer).created_at < ev.created_at) {
+          seen.set(peer, ev);
+        }
       }
     };
     ws.onerror = () => { clearTimeout(timer); resolve(); };

@@ -25,7 +25,7 @@ func cmdPublish(args []string) {
 	if err != nil {
 		die("read latest.json: %v", err)
 	}
-	if l.CID == "" || l.Signature == "" {
+	if l.CID == "" || len(l.allSigs()) == 0 {
 		die("latest.json is unsigned or empty — run 'publisher sign' first")
 	}
 
