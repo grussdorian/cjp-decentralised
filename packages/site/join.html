@@ -58,6 +58,7 @@
 </main>
 <footer>
   This site is <a href="mirror.html">mirrored across hundreds of nodes</a> and cannot be taken down.
+  <br><span id="cjp-verify-badge" class="cjp-badge cjp-badge--pending"></span>
 </footer>
 <script>
   (function() {
@@ -79,5 +80,6 @@
   import { handleJoin } from './js/forms.js';
   document.getElementById('join-form').addEventListener('submit', (e) => handleJoin(e.target));
 </script>
+<script src="js/verify.js" defer></script>
 </body>
 </html>
