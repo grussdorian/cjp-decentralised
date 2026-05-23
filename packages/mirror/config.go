@@ -14,6 +14,7 @@ type Config struct {
 	SignersFile  string        // Path to trusted-signers.json
 	StateFile    string        // Path to persisted daemon state
 	Country      string        // Reported country in heartbeat (optional)
+	MirrorURL    string        // Public URL of this mirror's clearweb endpoint (optional, e.g. https://mymirror.example.com)
 }
 
 func defaultConfig() Config {
@@ -25,7 +26,8 @@ func defaultConfig() Config {
 		FallbackURLs: fallbackURLs(),
 		SignersFile: envOr("SIGNERS_FILE", "trusted-signers.json"),
 		StateFile:   envOr("STATE_FILE", home+"/.cjp/mirror-state.json"),
-		Country:     envOr("COUNTRY", ""),
+		Country:   envOr("COUNTRY", ""),
+		MirrorURL: envOr("MIRROR_URL", ""),
 	}
 }
 

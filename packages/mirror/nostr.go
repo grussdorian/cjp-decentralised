@@ -25,14 +25,20 @@ func ensureNostrKey(state *State) {
 }
 
 // broadcastHeartbeat publishes a signed Nostr event announcing this mirror is alive.
-func broadcastHeartbeat(nostrSK, peerID, cid, country string, version int64) error {
-	payload, err := json.Marshal(map[string]interface{}{
+// url is optional — set it to the public clearweb URL of this mirror (e.g. https://mymirror.example.com)
+// so that the mirror registry on the site can list it as a clickable link.
+func broadcastHeartbeat(nostrSK, peerID, cid, country, url string, version int64) error {
+	fields := map[string]interface{}{
 		"peer_id": peerID,
 		"cid":     cid,
 		"version": version,
 		"country": country,
 		"ts":      time.Now().Unix(),
-	})
+	}
+	if url != "" {
+		fields["url"] = url
+	}
+	payload, err := json.Marshal(fields)
 	if err != nil {
 		return err
 	}

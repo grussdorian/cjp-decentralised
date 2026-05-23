@@ -30,7 +30,20 @@ docker-compose.yml   One-command volunteer mirror stack
 docker compose up -d
 ```
 
-That's it. Your node will automatically pin the latest version and serve it on port 8081.
+Your node will pin the latest signed content to IPFS and announce itself on the global Nostr mirror registry every 15 minutes — no domain or registration required.
+
+**To appear as a clickable mirror on the site**, set `MIRROR_URL` to your public hostname:
+
+```yaml
+# docker-compose.override.yml
+services:
+  mirror:
+    environment:
+      MIRROR_URL: "https://cjp.yourdomain.example"
+      COUNTRY: "IN"
+```
+
+Your domain will appear automatically in the [live mirror list](https://cjp.fheya.de/mirror.html) and on this README within the hour — no PR or manual registration needed. Visitors can click your link and independently verify the content badge on your mirror.
 
 ## Publish an update (developers)
 

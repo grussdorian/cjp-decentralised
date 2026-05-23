@@ -137,7 +137,7 @@ func (d *Daemon) sendHeartbeat(latest *Latest) {
 	if d.state.NostrSK == "" {
 		return
 	}
-	if err := broadcastHeartbeat(d.state.NostrSK, d.peerID, latest.CID, d.cfg.Country, latest.Version); err != nil {
+	if err := broadcastHeartbeat(d.state.NostrSK, d.peerID, latest.CID, d.cfg.Country, d.cfg.MirrorURL, latest.Version); err != nil {
 		log.Printf("heartbeat: %v", err)
 	} else {
 		log.Println("Heartbeat sent to Nostr")

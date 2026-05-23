@@ -37,14 +37,50 @@
   <pre><code>git clone https://github.com/grussdorian/cjp-decentralised
 cd cjp-decentralised
 docker compose up -d</code></pre>
-  <p>That's it. Your node will:</p>
-  <ul>
-    <li>Run a local IPFS node and pin the latest site CID</li>
-    <li>Automatically update when a new CID is published</li>
-    <li>Serve the site on port <code>8081</code> as a clearweb fallback</li>
-    <li>Announce itself to the Nostr mirror registry every 15 minutes</li>
-    <li>Expose a Tor hidden service (<code>.onion</code> address printed on first start)</li>
-  </ul>
+  <p>That's it. Your node will pin the site to IPFS and announce itself to the global mirror registry every 15 minutes. No domain or public IP needed — but if you have one, read below.</p>
+
+  <h2>Serve with your own domain (optional)</h2>
+  <p>
+    If you have a VPS or server with a public hostname, you can serve the site as a
+    clearweb fallback. Set the <code>MIRROR_URL</code> environment variable to your public URL and
+    the daemon will broadcast it in every heartbeat — your domain will appear automatically
+    in the <strong>Active mirrors</strong> list below, and in the GitHub registry, for anyone to visit.
+  </p>
+  <pre><code># In your docker-compose.override.yml (or edit docker-compose.yml):
+services:
+  mirror:
+    environment:
+      MIRROR_URL: "https://cjp.yourdomain.example"
+      COUNTRY: "IN"   # your ISO country code</code></pre>
+  <p>
+    Then add a reverse proxy (nginx/Caddy/Traefik) to forward your domain to the
+    IPFS gateway at <code>http://localhost:8080/ipfs/&lt;CID&gt;</code>.
+    The verification badge at the bottom of every page will automatically confirm
+    whether your mirror is serving authentic, signed content.
+  </p>
+  <pre><code># Minimal nginx snippet
+server {
+    server_name cjp.yourdomain.example;
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        add_header Cache-Control "no-cache, must-revalidate";
+    }
+}</code></pre>
+
+  <h2>How the mirror registry works</h2>
+  <p>
+    Every mirror daemon broadcasts a signed <a href="https://nostr.com" target="_blank" rel="noopener noreferrer">Nostr</a>
+    heartbeat event every 15 minutes tagged <code>#cjp-mirrors</code>.
+    The heartbeat includes the pinned CID, country, and — if set — the mirror's public URL.
+    The active mirrors list below is built live from these events, queried directly from
+    public Nostr relays in your browser. No central server. No registration. No list to
+    maintain. If your node is alive and connected to a Nostr relay, it is counted.
+  </p>
+  <p>
+    Mirrors with a public URL are automatically linked from this page and from the
+    <a href="https://github.com/grussdorian/cjp-decentralised" target="_blank" rel="noopener noreferrer">GitHub repository</a>.
+    Visitors can click any listed mirror and verify its badge independently.
+  </p>
 
   <h2>Manual Setup (no Docker)</h2>
   <h3>1. Install IPFS</h3>
@@ -57,10 +93,11 @@ ipfs daemon &amp;</code></pre>
 ipfs pin add &lt;CID&gt;</code></pre>
 
   <h3>3. Run the mirror daemon</h3>
-  <pre><code># Download the binary for your platform from the GitHub releases page
+  <pre><code>MIRROR_URL=https://cjp.yourdomain.example \
+COUNTRY=IN \
 ./mirror --ipfs http://localhost:5001</code></pre>
 
-  <h2>How mirror updates work</h2>
+  <h2>How content updates work</h2>
   <p>
     The party publishes a signed <code>latest.json</code> file whenever the site is
     updated. The mirror daemon fetches it every 15 minutes, verifies the

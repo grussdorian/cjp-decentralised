@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-23T20:24:47.734Z",
+  "generated": "2026-05-23T20:50:28.088Z",
   "files": {
     "bn/demand.html": "b761b5af9f57c284145ef375bdb8cb55347901b168573d3ec66e44784741250c",
     "bn/index.html": "4e5d270121ddc90da0fcef2664bee25cd418405f969b5421372fb1ecc5d40286",
@@ -15,12 +15,12 @@
     "join.html": "bccc24499f76835993008cbb94cfa29b270bc30f4e276fcd2a99100b5a9cbc92",
     "js/age-encryption.bundle.js": "ea0a0ee5eadd2276fecc64a911979285f7dbbd4a290abfcd66c6ae65f36c3026",
     "js/forms.js": "bebb7749c179da7433ed4507d1035e7ab6bd4dc3cd83286ccadb3ed6234cdbeb",
-    "js/mirrors.js": "eff462c246df74afe171d0c9b255dbab65777fdd9c697d644d0ee9a425f9a502",
+    "js/mirrors.js": "ef92114b2df23817956baa3ebe71422edc07807068ca432c60bac8bde0629494",
     "js/nostr-tools.bundle.js": "eda4a17ecbef9b28b040f47225d75bcce49b3e27a2c08bd48cba8e3f1d47d79b",
     "js/pow-worker.js": "9a8a072aa4ecd33a0585e1fc11744588017978161b2fcb49670cacda607e845f",
     "js/relays.js": "372e056cebe396299e54d71d9b5228ff7389df821f509e8b8bbdc23d9b385e14",
     "js/verify.js": "c20d3325d5499fa732cd63354c40eecdeca5f6c175d1ef3e56927f0e429d0efd",
-    "mirror.html": "a3f0cc7e1395a76504b97a350ddce336eb87bd8b7c89afc729277b6eae6c9d01",
+    "mirror.html": "9fbab07b9aac71f28489a5076147d583eed962a2912191f437c8444ec8e0fb1c",
     "ta/demand.html": "2ad463b58301197510a7f883330343a8b00d3992df3ea6bca2d2024799a07f24",
     "ta/index.html": "79f6c3fc0b12e233ef71c361d22ccab015817c1a0d08d3a36a747740a3628437",
     "ta/join.html": "167cb76fa3470f66153d414d8f0cc4c3d1334cc341d661940896ced4c1c53a08",

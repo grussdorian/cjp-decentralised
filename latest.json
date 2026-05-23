@@ -1,12 +1,12 @@
 {
-  "cid": "bafybeieice5fh23l3fp42j2xrfesu5aiij7owjug4dxxyg7pbim4rv3g6q",
-  "version": 8,
-  "timestamp": 1779567905,
-  "note": "github verify chain, CI badge in README, trust.html github link",
+  "cid": "bafybeig4utnhueubwawxx47cbgbik55eiwqfshmddlxx4cvdn5xmco237a",
+  "version": 9,
+  "timestamp": 1779569453,
+  "note": "mirror URL in heartbeat, domain registration docs, registry mechanism",
   "signatures": [
     {
       "signer": "c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3",
-      "signature": "56f723930f27198d5d6ae28619ab8b97c8e6fa52c7dd098a5ec0ec894dd30c83a23e8c73b5bac29f24bdb5098d379769dbfbdd92f00eab5cc09a462c6c6c6b02"
+      "signature": "d0c77be7e4a2d602376721c0b8a8e07bd36684ab4fcaf70f87c2dcd4298498b35177791ad0fedfadff7806ff9c17c78f21b0893cb0ad82d71003cce2c126620d"
     }
   ]
 }
