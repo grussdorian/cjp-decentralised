@@ -1,8 +1,8 @@
 {
-  "cid": "",
-  "version": 0,
-  "timestamp": 0,
-  "note": "initial",
-  "signer": "",
-  "signature": ""
+  "cid": "bafybeiet5r6kquk3g34cobysguucawryuxprnhwcdsen3ynhhjcs5hliva",
+  "version": 1,
+  "timestamp": 1779558771,
+  "note": "initial release",
+  "signer": "c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3",
+  "signature": "823c7da51e83548696f5f45b74471e608e3adea7a858a3900839ae5194ad19432ab68cec112ae82d27f91f1c3d5e6db1a90a1712caed0a0a77ede65405242706"
 }
