@@ -37,13 +37,8 @@ function publishToRelay(url, event) {
 }
 
 function getCaptchaToken(form) {
-  // Turnstile injects a hidden input cf-turnstile-response when solved
-  const t = form.querySelector('[name="cf-turnstile-response"]');
-  if (t?.value) return t.value;
-  // mCaptcha token stored by the mcaptcha-solved event listener
-  const m = form.querySelector('[name="mcaptcha-token"]');
-  if (m?.value) return m.value;
-  return '';
+  const el = form.querySelector('[name="pow-token"]');
+  return el ? el.value : '';
 }
 
 function setStatus(form, type, text) {
@@ -70,7 +65,7 @@ export async function handleJoin(form) {
     return;
   }
   if (!captcha) {
-    setStatus(form, 'err', 'Please complete the verification.');
+    setStatus(form, 'err', 'Proof-of-work not yet complete. Please wait a moment.');
     btn.disabled = false;
     return;
   }
@@ -126,7 +121,7 @@ export async function handleDemand(form) {
     return;
   }
   if (!captcha) {
-    setStatus(form, 'err', 'Please complete the verification.');
+    setStatus(form, 'err', 'Proof-of-work not yet complete. Please wait a moment.');
     btn.disabled = false;
     return;
   }

@@ -296,6 +296,28 @@ pre{
 
 code{font-family:'Cascadia Code','Fira Mono','Courier New',monospace}
 
+/* ── Proof-of-work widget ── */
+.pow-widget{
+  display:flex;
+  align-items:center;
+  gap:.6rem;
+  padding:.55rem .8rem;
+  background:var(--bg3);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  font-size:.875rem;
+  color:var(--muted);
+}
+.pow-widget.done{border-color:#2d6a2d;color:#7ddb7d;background:#162916}
+.pow-spinner{
+  width:14px;height:14px;flex-shrink:0;
+  border:2px solid var(--border);
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
 /* ── CTAs ── */
 .ctas{display:flex;gap:.75rem;margin:2rem 0;flex-wrap:wrap}
 
