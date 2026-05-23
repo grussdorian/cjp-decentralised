@@ -1,12 +1,12 @@
 {
-  "cid": "bafybeifx5b5matdoji4ioztcnectn2rr6qqy2xbtclbkwdzpymnkzns2qe",
-  "version": 6,
-  "timestamp": 1779566887,
-  "note": "deduplicate mirrors by nostr pubkey",
+  "cid": "bafybeihsdtfhkqvbqyaycozavwrkemg3zwjplbjzaes4en5lut2vmmn4yy",
+  "version": 7,
+  "timestamp": 1779567776,
+  "note": "query all relays, github link on mirror page, sync tampered JS",
   "signatures": [
     {
       "signer": "c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3",
-      "signature": "b48a2e502b366bd50525d596fb2b65d73609cd1edcb9633072a25126dcc0b42115f7a66a8c6c74318914b3c8b1fd4e5035b9f22e7841af355cb90d72b6a4ed05"
+      "signature": "717ba693b9500e5a2982a46bd0d0d662a2250ae1d53458df7f7de7dc89076a81f0f69cde4bbf351aa0f6c3c9da7bb285de3686043eac2a05742440e9252e8900"
     }
   ]
 }
