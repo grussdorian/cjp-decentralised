@@ -9,7 +9,7 @@ export async function loadMirrorStats(countEl, listEl) {
 
   const seen = new Map(); // nostr pubkey → latest event
 
-  await Promise.allSettled(RELAYS.slice(0, 5).map(url => queryRelay(url, filter, seen)));
+  await Promise.allSettled(RELAYS.map(url => queryRelay(url, filter, seen)));
 
   if (countEl) {
     countEl.textContent = seen.size;
