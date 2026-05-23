@@ -40,14 +40,12 @@ jobs:
       - name: Build site
         run: node scripts/build.js
 
-      - name: Upload to web3.storage
+      - name: Upload to Pinata (IPFS)
         id: ipfs
         env:
-          WEB3_STORAGE_TOKEN: ${{ secrets.WEB3_STORAGE_TOKEN }}
+          PINATA_JWT: ${{ secrets.PINATA_JWT }}
         run: |
-          npm install -g @web3-storage/w3cli
-          w3 login --no-browser
-          CID=$(w3 put dist/ --no-wrap --json | jq -r '.root."/"."/"')
+          CID=$(node scripts/pinata-upload.mjs dist)
           echo "cid=$CID" >> "$GITHUB_OUTPUT"
           echo "## New IPFS CID" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
