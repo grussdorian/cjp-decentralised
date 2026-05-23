@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Join — Cockroach Janata Party</title>
+<meta name="description" content="Join the Cockroach Army. No email required. No data sold.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav>
+  <a class="logo" href="index.html">CJP <em>Cockroach Janata Party</em></a>
+  <ul>
+    <li><a href="index.html">Manifesto</a></li>
+    <li><a href="join.html" class="active">Join</a></li>
+    <li><a href="demand.html">Demand</a></li>
+    <li><a href="mirror.html">Mirror</a></li>
+  </ul>
+</nav>
+<main>
+  <h1>Join the Cockroach Army</h1>
+  <p class="sub">No email. No phone number. No data sold. Your name and state are submitted<br>
+  as an encrypted message only the party can read. Verified human, anonymous otherwise.</p>
+
+  <div class="card">
+    <form id="join-form" onsubmit="return false">
+      <div class="fg">
+        <label for="name">Your name</label>
+        <input type="text" id="name" name="name" placeholder="Full name" required autocomplete="off">
+      </div>
+      <div class="fg">
+        <label for="state">State / Union Territory</label>
+        <select id="state" name="state" required>
+          <option value="">— Select —</option>
+          <option>Andhra Pradesh</option>
+          <option>Arunachal Pradesh</option>
+          <option>Assam</option>
+          <option>Bihar</option>
+          <option>Chhattisgarh</option>
+          <option>Goa</option>
+          <option>Gujarat</option>
+          <option>Haryana</option>
+          <option>Himachal Pradesh</option>
+          <option>Jharkhand</option>
+          <option>Karnataka</option>
+          <option>Kerala</option>
+          <option>Madhya Pradesh</option>
+          <option>Maharashtra</option>
+          <option>Manipur</option>
+          <option>Meghalaya</option>
+          <option>Mizoram</option>
+          <option>Nagaland</option>
+          <option>Odisha</option>
+          <option>Punjab</option>
+          <option>Rajasthan</option>
+          <option>Sikkim</option>
+          <option>Tamil Nadu</option>
+          <option>Telangana</option>
+          <option>Tripura</option>
+          <option>Uttar Pradesh</option>
+          <option>Uttarakhand</option>
+          <option>West Bengal</option>
+          <option>Andaman &amp; Nicobar Islands</option>
+          <option>Chandigarh</option>
+          <option>Dadra &amp; Nagar Haveli and Daman &amp; Diu</option>
+          <option>Delhi</option>
+          <option>Jammu &amp; Kashmir</option>
+          <option>Ladakh</option>
+          <option>Lakshadweep</option>
+          <option>Puducherry</option>
+          <option>Outside India</option>
+        </select>
+      </div>
+      <div class="fg">
+        <frc-captcha data-sitekey="REPLACE_WITH_FRIENDLYCAPTCHA_SITEKEY"></frc-captcha>
+      </div>
+      <button type="submit" class="btn">Join Now</button>
+      <div class="status" role="alert"></div>
+    </form>
+  </div>
+
+  <p style="margin-top:1.5rem;color:var(--muted);font-size:.85rem">
+    Submissions are sent as <strong>encrypted Nostr messages</strong> to the party's public key.
+    Only the party can decrypt them. The submission is broadcast to 12+ independent relays
+    simultaneously — no single server can be taken down to erase your membership.
+  </p>
+</main>
+<footer>
+  This site is <a href="mirror.html">mirrored across hundreds of nodes</a> and cannot be taken down.
+</footer>
+<script type="module" src="https://cdn.jsdelivr.net/npm/friendly-challenge@0.9.12/widget.module.min.js" crossorigin="anonymous" async defer></script>
+<script type="module">
+  import { handleJoin } from './js/forms.js';
+  document.getElementById('join-form').addEventListener('submit', (e) => handleJoin(e.target));
+</script>
+</body>
+</html>
