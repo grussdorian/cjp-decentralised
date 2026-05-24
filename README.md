@@ -32,12 +32,25 @@ https://dweb.link/ipfs/bafybeigqenmqcvqupguyqr2dl4pb45dcipux62xc73u665p2iqzyb2sq
 
 ## Run a volunteer mirror
 
-Everything you need is bundled. A VPS with a public IP and a DNS record is enough — the stack builds itself, provisions a free TLS cert, and federates with the network.
+Everything you need is bundled. The stack builds itself, provisions a free TLS cert, and federates with the network.
+
+### Preconditions
+
+For a **public mirror**:
+- A VPS with a public IPv4/IPv6 address
+- Ports `80` and `443` open in the firewall (Caddy needs `:80` for the Let's Encrypt HTTP-01 challenge, `:443` for the served HTTPS)
+- A DNS `A` or `AAAA` record for your hostname pointing at the VPS **before** the first `docker compose up` — otherwise Caddy's first cert request fails and Let's Encrypt will rate-limit you for ~1 hour
+- Docker + Docker Compose installed
+
+For a **local test stack** (no public exposure):
+- Just Docker. None of the above network setup is needed; the stack still federates via public Nostr relays.
+
+### Setup
 
 ```bash
 git clone https://github.com/grussdorian/cjp-decentralised
 cd cjp-decentralised
-cp .env.example .env       # edit MIRROR_HOST, ACME_EMAIL, MIRROR_RELAY_URL
+cp .env.example .env       # edit MIRROR_HOST, ACME_EMAIL, MIRROR_RELAY_URL, COUNTRY
 docker compose up -d
 ```
 
@@ -52,9 +65,25 @@ That's the whole setup. The stack brings up:
 | **mirror** | Builds from source; polls `latest.json`, verifies signatures, pins, broadcasts |
 | **tor** | Optional `.onion` hidden service |
 
-**For a public mirror**, set `MIRROR_HOST=cjp.example.com` in `.env`. The DNS A/AAAA record must already point at the VPS — Caddy uses the HTTP-01 challenge to get the cert, so the host must be reachable from the public internet on port 80 before the first `docker compose up`.
+### What happens with no env vars set
 
-**For a local test stack**, leave `MIRROR_HOST` empty. Caddy serves HTTP-only on `:80`, no cert work happens, and the daemon still federates via public Nostr relays.
+If you clone and `docker compose up -d` without editing `.env`, everything still works:
+
+- HTTP-only on `:80` (Caddy doesn't try to provision a cert)
+- IPFS pinning + Nostr heartbeats + DHT propagation all happen
+- Federation via the public Nostr relays the daemon ships with
+- Your relay isn't advertised, your gateway isn't reachable via a public hostname
+
+Useful for verifying the build before you point DNS at the VPS.
+
+### What happens with the full env set
+
+| `.env` variable | Effect |
+|----------------|--------|
+| `MIRROR_HOST=cjp.example.com` | Caddy gets a real cert; kubo configures path-mode gateway for the hostname |
+| `ACME_EMAIL=ops@example.com` | Let's Encrypt sends cert-expiry warnings here (optional) |
+| `MIRROR_RELAY_URL=wss://cjp.example.com/relay` | Daemon advertises this in heartbeats; visiting browsers add it to their relay query pool |
+| `COUNTRY=IN` | Shown next to your mirror in the live list (purely informational) |
 
 Your domain appears automatically in the [live mirror list](https://cjp.fheya.de/mirror.html) within ~2 minutes of the daemon broadcasting its first heartbeat. No PR, no manual registration.
 
