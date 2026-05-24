@@ -20,14 +20,14 @@ More mirrors are listed live at [cjp.fheya.de/mirror.html](https://cjp.fheya.de/
 Every mirror shows a badge at the bottom of each page. To verify independently:
 
 1. Open [`latest.json`](latest.json) in this repo. Note the `version` number and `cid`.
-2. Open any mirror — the badge must show the **same version number** and **same IPFS CID** (`bafybeihwfq3t4cks2clkdeladwe3trtrgvicq4ylciekeeczf45xv33wyi`).
+2. Open any mirror — the badge must show the **same version number** and **same IPFS CID** (`bafybeigzm47a4hrwfxusmrwrj3dgsq4j6xgcbntvnobkarlsmzgjr4hnmm`).
 3. The key fingerprint in the badge (`c1688ff0…b5c3`) must match [trusted-signers.json](trusted-signers.json).
 
 If a mirror shows a different CID, a different version, or a different fingerprint — it is not serving authentic content.
 
 You can also fetch the content directly from IPFS:
 ```
-https://dweb.link/ipfs/bafybeihwfq3t4cks2clkdeladwe3trtrgvicq4ylciekeeczf45xv33wyi
+https://dweb.link/ipfs/bafybeigzm47a4hrwfxusmrwrj3dgsq4j6xgcbntvnobkarlsmzgjr4hnmm
 ```
 
 ## Run a volunteer mirror
@@ -67,14 +67,52 @@ That's the whole setup. The stack brings up:
 
 ### What happens with no env vars set
 
-If you clone and `docker compose up -d` without editing `.env`, everything still works:
+If you clone and `docker compose up -d` without editing `.env`, everything still works locally — and you still participate in the federation's trust graph.
 
 - HTTP-only on `:80` (Caddy doesn't try to provision a cert)
 - IPFS pinning + Nostr heartbeats + DHT propagation all happen
 - Federation via the public Nostr relays the daemon ships with
 - Your relay isn't advertised, your gateway isn't reachable via a public hostname
 
-Useful for verifying the build before you point DNS at the VPS.
+### Participation without a VPS or domain
+
+This is not test-mode. Anyone with `docker` on a laptop, an old desktop, or a Raspberry Pi can be a full participant in the attestation network — without owning a VPS, a domain, or a public IP.
+
+What a no-public-infra volunteer contributes:
+
+| Signal | Visible to the network? |
+|---|---|
+| Broadcasts heartbeats with their Nostr pubkey every ~60s | Yes — appears in mirror count and others' attestation peers list |
+| Publishes their own attestation every 6h | Yes — kind:30078 event federated across public Nostr relays |
+| Lists peers they've observed | Yes — those peers gain an endorser |
+| References other mirrors' attestation event IDs in `seen_attestations` | Yes — chain endorsements that make back-dating cryptographically expensive |
+
+In the [attestation graph](https://cjp.fheya.de/trust.html#attestation-network), they appear as a node, contribute trust score to peers they've endorsed, receive trust score from peers that endorsed them. They don't need to be reachable from the open internet — only that they can reach a few public Nostr relays for the heartbeat and attestation broadcasts.
+
+VPS + domain only adds *serving* capability — clickable mirror in the list, public IPFS gateway, federation relay endpoint. None of that affects the trust graph itself. **Trust evidence accumulates from anyone willing to leave Docker running.**
+
+### Practical example: a vote you can't shut down
+
+50 volunteers run the stack overnight from their personal machines. 5 of them have a VPS and domain, so they show up as clickable mirrors. The other 45 don't expose anything publicly.
+
+All 50 broadcast heartbeats. All 50 publish daily attestations. Each one references the others' attestation event IDs. After ~24 hours, the attestation graph has 50 nodes, the average peer is endorsed by 49 others, and the cross-attestation graph is dense.
+
+**That graph is the proof.** Even if every one of those volunteers shuts their machine down the next morning, their signed attestation events persist on Nostr relays around the world. The signed snapshots are permanent records: "On date X, these 50 pubkeys constituted the network, and here are the signatures from each one attesting to the others' membership."
+
+A state actor who later wants to stand up an impostor mirror has to defeat all 50 dated, cross-referenced signatures. They can't — those events are content-addressed and replicated. The vote of confidence already happened. It can't be retracted, edited, or shut down.
+
+### Proof of participation
+
+Every daemon emits two parallel attestation events:
+
+| Event | Purpose |
+|-------|---------|
+| `kind:30078, d="v1"` (replaceable) | Always the latest snapshot — efficient "current state" query |
+| `kind:30078, d="YYYY-MM-DD"` (one per day) | Permanent daily archive — proof that this pubkey was attested on this date |
+
+The daily archive is the participation log. A volunteer who runs the stack for one night and earns endorsements from established mirrors is on the record permanently — the trust page's "Lifetime participants" counter shows them even after their machine is offline.
+
+Anyone can independently verify: query Nostr for kind:30078 cjp-attestation events with d=YYYY-MM-DD, filter by participating pubkey, count attesting mirrors, check signatures. No central authority, no API, no permission needed.
 
 ### What happens with the full env set
 
@@ -140,7 +178,7 @@ Signing authority is intentionally restricted. Contact the repository owner dire
 | Method | Address |
 |--------|---------|
 | Clearweb mirrors | listed at [/mirror](https://cjp.fheya.de/mirror.html) on the site |
-| IPFS gateway | [`dweb.link/ipfs/bafybeihwfq3t4cks2clkdeladwe3trtrgvicq4ylciekeeczf45xv33wyi`](https://dweb.link/ipfs/bafybeihwfq3t4cks2clkdeladwe3trtrgvicq4ylciekeeczf45xv33wyi) |
+| IPFS gateway | [`dweb.link/ipfs/bafybeigzm47a4hrwfxusmrwrj3dgsq4j6xgcbntvnobkarlsmzgjr4hnmm`](https://dweb.link/ipfs/bafybeigzm47a4hrwfxusmrwrj3dgsq4j6xgcbntvnobkarlsmzgjr4hnmm) |
 | IPNS | pending |
 | ENS | `cockroachjanataparty.eth` — pending on-chain registration |
 | Tor | pending hidden service setup |

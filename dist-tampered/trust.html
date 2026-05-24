@@ -182,6 +182,29 @@
     third parties is if anyone can read the attestations. Trust is public, queryable, reproducible.
   </p>
   <div id="attestation-status" style="margin:.75rem 0;color:var(--muted);font-size:.85rem">Loading from Nostr…</div>
+
+  <div id="lifetime-panel" style="display:none;margin:.6rem 0;padding:.6rem .8rem;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r)">
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:baseline">
+      <div>
+        <div style="font-size:1.4rem;font-weight:600;color:var(--accent)" id="lifetime-count">—</div>
+        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">All-time participants</div>
+      </div>
+      <div>
+        <div style="font-size:1.4rem;font-weight:600;color:var(--text)" id="lifetime-credible">—</div>
+        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Reached ≥ 70% trust at some point</div>
+      </div>
+      <div>
+        <div style="font-size:1.4rem;font-weight:600;color:var(--text)" id="lifetime-days">—</div>
+        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Days of recorded participation</div>
+      </div>
+    </div>
+    <p style="margin-top:.4rem;font-size:.75rem;color:var(--muted)">
+      Each daily archive is a signed Nostr event (<code>kind:30078</code>, <code>d=YYYY-MM-DD</code>),
+      content-addressed and federated. Anyone can independently re-run this query and verify the same numbers.
+      A volunteer who ran the stack overnight and earned trust is permanently on the record — even if their machine is offline now.
+    </p>
+  </div>
+
   <div id="attestation-graph-wrap" style="display:none;margin:.8rem 0">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
       <strong style="font-size:.9rem">Cross-attestation graph</strong>
@@ -454,12 +477,113 @@
     return svg;
   }
 
+  // Aggregate historical attestations to produce the lifetime proof-of-
+  // participation view. Each peer's "best ever" trust score across all
+  // daily archives, plus the union of pubkeys ever named in any attestation.
+  function buildLifetime(allEvents) {
+    const dailyByDate = new Map(); // dateString → array of events with d=YYYY-MM-DD
+    let attestersEverSeen = new Set();
+    const peakAttestersByPeer = new Map(); // pubkey → max attesters count
+
+    for (const ev of allEvents) {
+      const dTag = (ev.tags || []).find(t => t[0] === 'd');
+      if (!dTag) continue;
+      const d = dTag[1];
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) continue;
+      if (!dailyByDate.has(d)) dailyByDate.set(d, []);
+      dailyByDate.get(d).push(ev);
+    }
+
+    // For each day, deduplicate by attester (keep newest), compute peer→attesters map.
+    const totalAttesterSet = new Set();
+    for (const [date, events] of dailyByDate) {
+      const latestPerAttester = new Map();
+      for (const ev of events) {
+        const prev = latestPerAttester.get(ev.pubkey);
+        if (!prev || ev.created_at > prev.created_at) latestPerAttester.set(ev.pubkey, ev);
+      }
+      const dayPeerAttesters = new Map(); // peer pubkey → Set of attester pubkeys for this day
+      for (const ev of latestPerAttester.values()) {
+        attestersEverSeen.add(ev.pubkey);
+        totalAttesterSet.add(ev.pubkey);
+        let payload;
+        try { payload = JSON.parse(ev.content); } catch { continue; }
+        if (!payload) continue;
+        if (Array.isArray(payload.peers)) {
+          for (const p of payload.peers) {
+            if (!p || typeof p.pubkey !== 'string') continue;
+            let set = dayPeerAttesters.get(p.pubkey);
+            if (!set) { set = new Set(); dayPeerAttesters.set(p.pubkey, set); }
+            set.add(ev.pubkey);
+          }
+        }
+      }
+      // Self-attesters count as their own peer (with attesters = self).
+      for (const attesterPubkey of latestPerAttester.keys()) {
+        if (!dayPeerAttesters.has(attesterPubkey)) {
+          dayPeerAttesters.set(attesterPubkey, new Set([attesterPubkey]));
+        }
+      }
+      for (const [peer, attSet] of dayPeerAttesters) {
+        const prev = peakAttestersByPeer.get(peer) || 0;
+        if (attSet.size > prev) peakAttestersByPeer.set(peer, attSet.size);
+      }
+    }
+
+    // Count peers that reached ≥ 70% trust on at least one day. Trust score
+    // requires knowing the total attester count for that day, so a peer's
+    // ratio is computed per-day and we take the max.
+    let credible = 0;
+    for (const [peer, peakCount] of peakAttestersByPeer) {
+      // Use the largest possible attester pool across days as denominator
+      // for the peak ratio — but actually we want per-day ratio.
+      // Compute again per day for accuracy.
+      let peerPeakRatio = 0;
+      for (const [, events] of dailyByDate) {
+        const dayAttesters = new Set();
+        for (const ev of events) dayAttesters.add(ev.pubkey);
+        if (dayAttesters.size === 0) continue;
+        let count = 0;
+        for (const ev of events) {
+          let payload;
+          try { payload = JSON.parse(ev.content); } catch { continue; }
+          if (payload && Array.isArray(payload.peers) && payload.peers.some(p => p && p.pubkey === peer)) {
+            count++;
+          } else if (ev.pubkey === peer) {
+            count++; // self-counted
+          }
+        }
+        const ratio = count / dayAttesters.size;
+        if (ratio > peerPeakRatio) peerPeakRatio = ratio;
+      }
+      if (peerPeakRatio >= 0.7) credible++;
+    }
+
+    return {
+      allTimePeers: peakAttestersByPeer.size,
+      credible,
+      daysRecorded: dailyByDate.size,
+    };
+  }
+
   async function load() {
     statusEl.textContent = 'Querying Nostr…';
     const since = Math.floor(Date.now() / 1000) - 90 * 24 * 3600;
-    const filter = { kinds: [30078], '#t': ['cjp-attestation'], since, limit: 200 };
+    // Pull both d="v1" (current state) and d="YYYY-MM-DD" archives in one query;
+    // filter splits them apart on the client.
+    const filter = { kinds: [30078], '#t': ['cjp-attestation'], since, limit: 1000 };
+    const allEvents = [];
+    await Promise.allSettled(RELAYS.map(u => queryRelay(u, filter, allEvents)));
+
+    // Split: current-state events (d=v1) vs daily archives (d=YYYY-MM-DD).
     const events = [];
-    await Promise.allSettled(RELAYS.map(u => queryRelay(u, filter, events)));
+    const dailyEvents = [];
+    for (const ev of allEvents) {
+      const dTag = (ev.tags || []).find(t => t[0] === 'd');
+      const d = dTag ? dTag[1] : '';
+      if (/^\d{4}-\d{2}-\d{2}$/.test(d)) dailyEvents.push(ev);
+      else events.push(ev);
+    }
 
     const latestByAttester = new Map();
     for (const ev of events) {
@@ -617,6 +741,16 @@
       layoutGraph(nodes, edges, 800, 480);
       graphEl.replaceChildren(renderGraph(nodes, edges));
       graphWrap.style.display = '';
+    }
+
+    // Lifetime stats from the daily archive events.
+    const lifetimePanel = document.getElementById('lifetime-panel');
+    if (dailyEvents.length > 0 && lifetimePanel) {
+      const stats = buildLifetime(dailyEvents);
+      document.getElementById('lifetime-count').textContent = stats.allTimePeers;
+      document.getElementById('lifetime-credible').textContent = stats.credible;
+      document.getElementById('lifetime-days').textContent = stats.daysRecorded;
+      lifetimePanel.style.display = '';
     }
   }
 

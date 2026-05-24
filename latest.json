@@ -1,12 +1,12 @@
 {
-  "cid": "bafybeihwfq3t4cks2clkdeladwe3trtrgvicq4ylciekeeczf45xv33wyi",
-  "version": 30,
-  "timestamp": 1779662436,
-  "note": "feat: trust scoring + SVG attestation graph + attestation-of-attestation chain",
+  "cid": "bafybeigzm47a4hrwfxusmrwrj3dgsq4j6xgcbntvnobkarlsmzgjr4hnmm",
+  "version": 31,
+  "timestamp": 1779663746,
+  "note": "feat: proof-of-participation via daily attestation archive + lifetime view",
   "signatures": [
     {
       "signer": "c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3",
-      "signature": "a65595ebe76e1515d906daeea9035f83fc8da2c26bc07ed3610a7ab4ccfc926d00716e75735a2ddaa5c93cddfdc9fa9afa2761ef4821918393a943efaf7f6f00"
+      "signature": "3627e69893151992dcd801e3331d24c53e88a85c55b3e3c2f96a0f5636f3bf7937012a96e90c275746680ef07dfece8b791e34f38fbd6b94c0da4c5f88f5d701"
     }
   ]
 }

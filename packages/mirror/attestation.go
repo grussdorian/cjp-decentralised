@@ -243,31 +243,55 @@ func buildAttestation(relayURLs []string, ownPubkey string, lookback time.Durati
 	}
 }
 
-// publishAttestation publishes the attestation as a NIP-33 parameterized
-// replaceable Nostr event. Kind 30078 is "Application-specific Data"; the
-// (kind, pubkey, "d") tuple identifies the event — newer events replace
-// older ones so we don't accumulate stale attestations on relays.
+// publishAttestation emits TWO NIP-33 parameterized replaceable events with
+// the same content but different "d" tags:
+//
+//   d="v1"          — always the latest state (replaces previous "v1" events
+//                     on every publish; relays keep only the newest).
+//   d="YYYY-MM-DD"  — a per-day archive (replaces within the day so dupes
+//                     get cleaned up, but each day's event persists across
+//                     days). 365 events per mirror per year.
+//
+// Together: cheap "current state" queries via "v1", and a permanent
+// proof-of-participation log via the dated archive. Anyone querying Nostr
+// can verify "this pubkey was attested by these mirrors on these specific
+// dates" — the events themselves are the proofs, signed and content-
+// addressed, replicated across relays.
 func publishAttestation(pool *RelayPool, nostrSK string, a *Attestation) error {
 	payload, err := json.Marshal(a)
 	if err != nil {
 		return err
 	}
-	ev := nostr.Event{
-		Kind: 30078,
-		Tags: nostr.Tags{
-			{"t", "cjp-attestation"},
-			{"d", "v1"},
-		},
-		Content:   string(payload),
-		CreatedAt: nostr.Timestamp(time.Now().Unix()),
+	now := time.Now()
+	day := now.UTC().Format("2006-01-02")
+
+	publish := func(dTag string) error {
+		ev := nostr.Event{
+			Kind: 30078,
+			Tags: nostr.Tags{
+				{"t", "cjp-attestation"},
+				{"d", dTag},
+			},
+			Content:   string(payload),
+			CreatedAt: nostr.Timestamp(now.Unix()),
+		}
+		if err := ev.Sign(nostrSK); err != nil {
+			return fmt.Errorf("sign attestation %q: %w", dTag, err)
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+		if ok := pool.Publish(ctx, ev); ok == 0 {
+			return fmt.Errorf("no relays accepted attestation %q", dTag)
+		}
+		return nil
 	}
-	if err := ev.Sign(nostrSK); err != nil {
-		return fmt.Errorf("sign attestation: %w", err)
+
+	if err := publish("v1"); err != nil {
+		return err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-	if ok := pool.Publish(ctx, ev); ok == 0 {
-		return fmt.Errorf("no relays accepted attestation")
+	if err := publish(day); err != nil {
+		// Best-effort — current-state still landed.
+		log.Printf("attestation: daily archive %q: %v", day, err)
 	}
 	return nil
 }
