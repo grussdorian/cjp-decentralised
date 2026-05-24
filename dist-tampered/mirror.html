@@ -54,9 +54,10 @@ services:
       COUNTRY: "IN"   # your ISO country code</code></pre>
   <p>
     Then add a reverse proxy (nginx/Caddy/Traefik) to forward your domain to the
-    IPFS gateway at <code>http://localhost:8080/ipfs/&lt;CID&gt;</code>.
-    The verification badge at the bottom of every page will automatically confirm
-    whether your mirror is serving authentic, signed content.
+    bundled nginx on <code>http://localhost:80</code>, which serves the
+    auto-updating mirror content. The verification badge at the bottom of every
+    page will automatically confirm whether your mirror is serving authentic,
+    signed content.
   </p>
   <pre><code># Minimal nginx snippet
 server {
@@ -118,24 +119,40 @@ COUNTRY=IN \
 </footer>
 <script type="module">
   import { loadMirrorStats } from './js/mirrors.js';
-  loadMirrorStats(
-    document.getElementById('mirror-count'),
-    document.getElementById('mirror-list')
-  );
+  const countEl = document.getElementById('mirror-count');
+  const listEl = document.getElementById('mirror-list');
+  loadMirrorStats(countEl, listEl);
+  setInterval(() => loadMirrorStats(countEl, listEl), 30000);
   // latest.json lives in the repo root, not in dist/, so fetch from GitHub.
-  fetch('https://raw.githubusercontent.com/grussdorian/cjp-decentralised/main/latest.json', { cache: 'no-cache' })
-    .then(r => r.json())
-    .then(d => {
-      const el = document.getElementById('current-cid');
-      if (d.cid) {
-        el.innerHTML = `<a href="https://ipfs.io/ipfs/${d.cid}" target="_blank" rel="noopener noreferrer" style="color:var(--text);text-decoration:underline;text-underline-offset:3px">${d.cid}</a>`;
+  // Abort after 5s so the CID display doesn't hang on a slow CDN/DNS path.
+  (async () => {
+    const target = document.getElementById('current-cid');
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 5000);
+    try {
+      const r = await fetch(
+        'https://raw.githubusercontent.com/grussdorian/cjp-decentralised/main/latest.json',
+        { cache: 'no-cache', signal: ctl.signal }
+      );
+      clearTimeout(timer);
+      const d = await r.json();
+      if (typeof d.cid === 'string' && /^[A-Za-z0-9]{20,80}$/.test(d.cid)) {
+        target.replaceChildren();
+        const a = document.createElement('a');
+        a.href = 'https://ipfs.io/ipfs/' + d.cid;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.style.cssText = 'color:var(--text);text-decoration:underline;text-underline-offset:3px';
+        a.textContent = d.cid;
+        target.appendChild(a);
       } else {
-        el.textContent = 'not yet published';
+        target.textContent = 'not yet published';
       }
-    })
-    .catch(() => {
-      document.getElementById('current-cid').textContent = 'unavailable';
-    });
+    } catch (_) {
+      clearTimeout(timer);
+      target.textContent = 'unavailable';
+    }
+  })();
 </script>
 <script src="js/verify.js" defer></script>
 </body>

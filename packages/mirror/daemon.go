@@ -130,10 +130,10 @@ func (d *Daemon) poll() {
 	prevVer := d.state.PinnedVer
 	d.stateMu.RUnlock()
 
-	// Already on this version?
+	// Already on this version? Heartbeat ticker will broadcast on its own
+	// schedule; no need to fire an extra one from here.
 	if latest.CID == prevCID {
 		log.Printf("Already pinned v%d, nothing to do", latest.Version)
-		d.sendHeartbeat(latest)
 		return
 	}
 	if latest.Version <= prevVer && prevVer > 0 {
@@ -179,6 +179,9 @@ func (d *Daemon) poll() {
 		}
 	}
 
+	// Fire one immediate heartbeat after a successful version bump so the new
+	// CID is visible to relays well before the next 30s tick. Subsequent
+	// heartbeats are handled by the ticker.
 	d.sendHeartbeat(latest)
 }
 

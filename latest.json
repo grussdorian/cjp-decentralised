@@ -1,12 +1,12 @@
 {
-  "cid": "bafybeift7z6lwcbquelwe6ke53jhdvaquq75wpccgvuy475yjbscfk2dpa",
-  "version": 21,
-  "timestamp": 1779585097,
-  "note": "fix: serialise poll(), guard state with mutex, atomic-swap serve dir, mask file modes",
+  "cid": "bafybeibyhq2i64wsjfbmq7u4ep7qfhvqqx4neiytcj7ksuceenrjwv7tvy",
+  "version": 22,
+  "timestamp": 1779585763,
+  "note": "medium-severity fixes: XSS hardening, gateway race, parseDuration, dedup heartbeat",
   "signatures": [
     {
       "signer": "c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3",
-      "signature": "a3a7d8f00624977c7ed2803a9cf07687a509d254a1f4ecd696c447a352d8dc704b2ca54cf2eeda37448b463af853a0d078cb9b64d729b018ad7c048a8a310603"
+      "signature": "b654ab067251fa80d7c0db63ea65ab9426e283b9cc5f0d4d53f28fdc1f992ba13522511b8012d138ef6b195485dedf64c1b8ec8472a9e68e07feb97bdaa46d0c"
     }
   ]
 }

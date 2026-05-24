@@ -1,10 +1,35 @@
 // Queries Nostr relays for mirror heartbeat events and displays live stats.
 import { RELAYS, MIRROR_TAG } from './relays.js';
 
-const ONE_HOUR = 300;
+// Heartbeat window: mirrors that haven't sent a heartbeat within this many
+// seconds are not counted. Mirror daemons beat every 30s.
+const HEARTBEAT_WINDOW_S = 300;
+
+// Whitelist of CID character class — base32 + base58. Anything else is dropped.
+const CID_PATTERN = /^[A-Za-z0-9]{20,80}$/;
+// Whitelist for ISO country codes / short identifiers displayed in the list.
+const COUNTRY_PATTERN = /^[A-Za-z0-9 _\-]{0,32}$/;
+
+function safeURL(s) {
+  if (typeof s !== 'string') return null;
+  try {
+    const u = new URL(s);
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
+    return u;
+  } catch {
+    return null;
+  }
+}
+
+function el(tag, attrs, text) {
+  const e = document.createElement(tag);
+  if (attrs) for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
 
 export async function loadMirrorStats(countEl, listEl) {
-  const since = Math.floor(Date.now() / 1000) - ONE_HOUR;
+  const since = Math.floor(Date.now() / 1000) - HEARTBEAT_WINDOW_S;
   const filter = { kinds: [1], '#t': [MIRROR_TAG], since, limit: 200 };
 
   const seen = new Map(); // nostr pubkey → latest event
@@ -15,28 +40,62 @@ export async function loadMirrorStats(countEl, listEl) {
     countEl.textContent = seen.size;
   }
 
-  if (listEl) {
-    if (seen.size === 0) {
-      listEl.innerHTML = '<p style="color:var(--muted);font-size:.875rem">No active mirrors in the last hour. <a href="mirror.html">Be the first.</a></p>';
+  if (!listEl) return;
+
+  // Reset list
+  listEl.replaceChildren();
+
+  if (seen.size === 0) {
+    const p = el('p', { style: 'color:var(--muted);font-size:.875rem' });
+    p.append('No active mirrors in the last hour. ');
+    p.appendChild(el('a', { href: 'mirror.html' }, 'Be the first.'));
+    listEl.appendChild(p);
+    return;
+  }
+
+  // Heartbeat content is attacker-controlled (anyone can publish a Nostr event
+  // with the cjp-mirrors tag). Treat every field as untrusted and build the DOM
+  // via textContent / strict whitelists — never innerHTML.
+  for (const [peer, ev] of seen) {
+    let data;
+    try { data = JSON.parse(ev.content); } catch { continue; }
+    if (!data || typeof data !== 'object') continue;
+
+    const div = el('div', { class: 'stat-box' });
+
+    const peerCode = el('code', null, peer.slice(0, 16) + '…');
+    div.appendChild(peerCode);
+    div.appendChild(el('br'));
+
+    const small = el('small', { style: 'color:var(--muted)' });
+    const country = (typeof data.country === 'string' && COUNTRY_PATTERN.test(data.country))
+      ? data.country : 'Unknown';
+    small.append(country, ' · ');
+
+    if (typeof data.cid === 'string' && CID_PATTERN.test(data.cid)) {
+      small.appendChild(el('a', {
+        href: 'https://ipfs.io/ipfs/' + data.cid,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        style: 'color:var(--muted)',
+      }, 'CID ' + data.cid.slice(0, 12) + '…'));
     } else {
-      listEl.innerHTML = '';
-      for (const [peer, ev] of seen) {
-        try {
-          const data = JSON.parse(ev.content);
-          const div = document.createElement('div');
-          div.className = 'stat-box';
-          const cidShort = (data.cid || '').slice(0, 12) + '…';
-          const cidLink = data.cid
-            ? `<a href="https://ipfs.io/ipfs/${data.cid}" target="_blank" rel="noopener noreferrer" style="color:var(--muted)">CID ${cidShort}</a>`
-            : 'CID unknown';
-          const urlPart = data.url
-            ? ` · <a href="${data.url}" target="_blank" rel="noopener noreferrer" style="color:var(--accent)">${new URL(data.url).hostname}</a>`
-            : '';
-          div.innerHTML = `<code>${peer.slice(0, 16)}…</code><br><small style="color:var(--muted)">${data.country || 'Unknown'} · ${cidLink}${urlPart}</small>`;
-          listEl.appendChild(div);
-        } catch {}
-      }
+      small.append('CID unknown');
     }
+
+    const url = safeURL(data.url);
+    if (url) {
+      small.append(' · ');
+      small.appendChild(el('a', {
+        href: url.href,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        style: 'color:var(--accent)',
+      }, url.hostname));
+    }
+
+    div.appendChild(small);
+    listEl.appendChild(div);
   }
 }
 

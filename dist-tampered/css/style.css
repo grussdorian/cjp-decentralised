@@ -31,8 +31,8 @@ nav{
   border-bottom:1px solid var(--border);
   padding:0 1.5rem;
   display:flex;
-  align-items:center;
-  gap:1.5rem;
+  align-items:baseline;
+  gap:1rem;
   flex-wrap:wrap;
   position:sticky;
   top:0;
@@ -41,15 +41,16 @@ nav{
 
 .logo{
   font-weight:800;
-  font-size:1.05rem;
+  font-size:1rem;
   color:var(--accent);
   text-decoration:none;
-  padding:.9rem 0;
+  padding:.45rem 0;
   letter-spacing:.5px;
   white-space:nowrap;
+  line-height:1;
 }
 
-.logo em{color:var(--text);font-style:normal;font-weight:400}
+.logo em{color:var(--text);font-style:normal;font-weight:400;margin-left:.35rem}
 
 nav ul{
   display:flex;
@@ -62,30 +63,34 @@ nav ul{
 nav ul a{
   color:var(--text);
   text-decoration:none;
-  padding:.9rem .7rem;
-  display:block;
+  padding:.45rem .5rem;
+  display:flex;
+  align-items:center;
   font-size:.875rem;
   transition:color .12s;
+  line-height:1;
 }
 
 nav ul a:hover,nav ul a.active{color:var(--accent)}
 
 .langs{
   display:flex;
-  gap:.2rem;
+  align-items:baseline;
+  gap:.15rem;
   margin-left:auto;
-  padding:.6rem 0;
+  padding:.45rem 0;
   flex-wrap:wrap;
 }
 
 .langs a{
   color:var(--muted);
   text-decoration:none;
-  font-size:.75rem;
-  padding:.2rem .4rem;
+  font-size:.72rem;
+  padding:.18rem .35rem;
   border-radius:var(--r);
   transition:all .12s;
   white-space:nowrap;
+  line-height:1;
 }
 
 .langs a:hover{color:var(--text)}
@@ -358,10 +363,110 @@ footer a:hover{color:var(--text)}
 
 /* ── Responsive ── */
 @media(max-width:600px){
-  nav{gap:.4rem;padding:0 1rem}
-  nav ul a{padding:.75rem .45rem;font-size:.82rem}
-  .logo{font-size:.95rem}
-  h1{font-size:1.65rem}
-  .card{padding:1.25rem}
-  main{padding:1.75rem 1rem 2.5rem}
+  /* ── Compact single-row nav ── */
+  nav{
+    gap:.15rem;
+    padding:0 .4rem;
+    flex-wrap:nowrap;
+    align-items:center;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  nav::-webkit-scrollbar{display:none}
+
+  .logo{
+    font-size:.82rem;
+    padding:.35rem 0;
+    flex-shrink:0;
+    letter-spacing:0;
+    margin-right:.2rem;
+    line-height:1;
+    display:flex;
+    align-items:center;
+  }
+  .logo em{display:none}
+
+  nav ul{flex-shrink:0}
+  nav ul a{
+    padding:.35rem .3rem;
+    font-size:.74rem;
+    white-space:nowrap;
+    line-height:1;
+    display:flex;
+    align-items:center;
+  }
+
+  .langs{
+    padding:.35rem 0;
+    gap:.1rem;
+    margin-left:.08rem;
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+  }
+  .langs a{
+    font-size:.6rem;
+    padding:.08rem .16rem;
+    border-radius:2px;
+    line-height:1;
+  }
+
+  /* ── Content ── */
+  h1{font-size:1.45rem}
+  h2{font-size:1rem;margin:1.25rem 0 .5rem}
+  .sub{font-size:.82rem;margin-bottom:1rem}
+  p{margin-bottom:.65rem}
+  main{padding:1rem .7rem 1.25rem}
+  .card{padding:1rem;max-width:100%}
+
+  /* ── Verification badge ── */
+  .cjp-badge{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    text-align:center;
+    font-size:.64rem;
+    padding:.25rem .4rem;
+    gap:.2rem;
+    line-height:1.5;
+    word-break:break-word;
+    max-width:100%;
+    margin-left:auto;
+    margin-right:auto;
+  }
+  .cjp-badge__cid{font-size:.9em}
+
+  /* ── Footer ── */
+  footer{
+    padding:.8rem .7rem;
+    font-size:.68rem;
+    line-height:1.6;
+  }
+
+  /* ── Mirror page ── */
+  .big-num{font-size:2rem}
+  .stat-box{padding:.65rem .8rem}
+  .grid2{grid-template-columns:1fr;gap:.6rem}
+  pre{font-size:.7rem;padding:.6rem .7rem;white-space:pre-wrap;word-break:break-all}
+  pre code{word-break:break-all}
+
+  /* ── CTAs / buttons ── */
+  .ctas{flex-direction:column;gap:.4rem}
+  .ctas .btn{text-align:center;width:100%}
+  .btn{font-size:.85rem;padding:.5rem 1.1rem}
+
+  /* ── Manifesto ── */
+  .manifesto-list li{padding:.7rem .8rem}
+
+  /* ── Forms ── */
+  input,select,textarea{font-size:.85rem;padding:.45rem .6rem}
+  .fg{margin-bottom:.8rem}
+
+  /* ── Tables ── */
+  table{font-size:.7rem}
+  th,td{padding:.3rem .4rem}
+
+  /* ── Blockquote ── */
+  blockquote{padding:.5rem .75rem;margin:1rem 0}
 }

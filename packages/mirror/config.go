@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -53,9 +54,16 @@ func envOr(key, def string) string {
 	return def
 }
 
+// parseDuration accepts either Go duration form ("15m", "30s") or a bare
+// integer treated as seconds ("900" → 900s). Falls back to defaultSec if both
+// fail. The bare-integer path matters because docker-compose env vars are
+// often written as plain numbers.
 func parseDuration(s string, defaultSec int) time.Duration {
 	if d, err := time.ParseDuration(s); err == nil {
 		return d
+	}
+	if n, err := strconv.Atoi(s); err == nil && n > 0 {
+		return time.Duration(n) * time.Second
 	}
 	return time.Duration(defaultSec) * time.Second
 }

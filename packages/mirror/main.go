@@ -49,10 +49,7 @@ func main() {
 	}
 
 	if *once {
-		daemon.poll()
-		if err := saveState(cfg.StateFile, daemon.state); err != nil {
-			log.Printf("save state: %v", err)
-		}
+		daemon.poll() // poll() persists state itself when it succeeds
 		os.Exit(0)
 	}
 

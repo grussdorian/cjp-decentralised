@@ -137,7 +137,9 @@
 
   // ── Step 4: fetch integrity.json via signed CID (content-addressed) ─────
   // Try all gateways in parallel with a short timeout so a single slow gateway
-  // doesn't hang the badge for 30+ seconds.
+  // doesn't hang the badge for 30+ seconds. Reject non-2xx inside each branch
+  // so Promise.any only resolves on a real success — a fast 404 from one
+  // gateway doesn't poison the race.
   let integrity = null;
   try {
     const ctl = new AbortController();
@@ -147,12 +149,12 @@
         fetch(`${gw}/${latest.cid}/integrity.json`, {
           cache: 'no-cache',
           signal: ctl.signal,
-        })
+        }).then(r => r.ok ? r : Promise.reject(new Error('non-2xx')))
       )
     );
     clearTimeout(timer);
-    if (res.ok) integrity = await res.json();
-    else ctl.abort(); // stop remaining requests on non-200
+    ctl.abort(); // cancel any in-flight gateways now that we have a winner
+    integrity = await res.json();
   } catch (_) { /* all gateways failed or timed out */ }
 
   if (!integrity) {
