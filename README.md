@@ -4,6 +4,22 @@
 
 Censorship-resistant web presence for the Cockroach Janata Party. No single point of failure across hosting, naming, form backends, or identity.
 
+## Manifesto
+
+This project is **defensive infrastructure for ideas**. It is not a substitute for democracy, it is not a franchise, and it is not a tool of participation for people who can't operate a web browser. It is worth being honest about what it does and what it does not do, because pretending otherwise weakens the work.
+
+**What it defends.** The continued existence of the manifesto's text, the cryptographic identity of the party's signing authority, and a permanent record of who endorsed the project at what time. If every clearweb domain is seized and every Nostr relay we use disappears, the signed content and the signed attestations of participation remain — replicated across every volunteer machine that ever ran the stack and every public relay that ever accepted the events. They can be republished from any one of those copies, and the signatures still verify.
+
+**What it does not do.** It does not enfranchise the un-connected. A peasant in Bihar with no smartphone is not given a voice by IPFS. They are given a voice by literacy, by actual elections, by water and sanitation and electricity. Decentralization tech does not fix material inequality; it sometimes hides inequality behind a veneer of digital sophistication while the people the message is *about* never see it.
+
+**Who builds vs. who reads.** Resistance tech has always been built by the digitally capable and read by everyone else. The Reformation's printing press was operated by a tiny clergy-educated class; the texts reached peasants who couldn't print but could listen. Samizdat in Soviet Russia was maybe a few thousand typists with an audience of millions. The CJP stack works the same way: a small number of urban operators run mirrors so the content reaches anyone with a cheap browser. **The democratic act is not running the daemon, it's reading the manifesto.** Operators bear the cost so consumers can benefit.
+
+**What this is not.** It is not a digital vote in the franchise sense. A vote is universally accessible, equally weighted, secret, and binding on an outcome. Our attestation network is none of those things — it is a chain of signed witness statements ("I saw this manifesto on this date and I endorse these other witnesses"), permanent and federated, but voluntary, pubkey-identifiable, and politically non-binding. It is closer to a notarized petition than to a ballot.
+
+**Honest scope.** This stack defends against catastrophic censorship of *digital* speech. It does not defend against poverty, illiteracy, state violence, or unequal access. Those require organizing, mutual aid, and political work that no amount of Go code can replace. Volunteers who pour energy into Docker should remember that the marginal hour spent here is an hour not spent on material organizing — and decide accordingly.
+
+The project's honesty about its own scope is part of what makes it credible.
+
 ## Live mirrors
 
 | Domain | Operator | Status |
@@ -91,15 +107,17 @@ In the [attestation graph](https://cjp.fheya.de/trust.html#attestation-network),
 
 VPS + domain only adds *serving* capability — clickable mirror in the list, public IPFS gateway, federation relay endpoint. None of that affects the trust graph itself. **Trust evidence accumulates from anyone willing to leave Docker running.**
 
-### Practical example: a vote you can't shut down
+### Practical example: a participation record you can't delete
 
 50 volunteers run the stack overnight from their personal machines. 5 of them have a VPS and domain, so they show up as clickable mirrors. The other 45 don't expose anything publicly.
 
 All 50 broadcast heartbeats. All 50 publish daily attestations. Each one references the others' attestation event IDs. After ~24 hours, the attestation graph has 50 nodes, the average peer is endorsed by 49 others, and the cross-attestation graph is dense.
 
-**That graph is the proof.** Even if every one of those volunteers shuts their machine down the next morning, their signed attestation events persist on Nostr relays around the world. The signed snapshots are permanent records: "On date X, these 50 pubkeys constituted the network, and here are the signatures from each one attesting to the others' membership."
+**That graph is the record.** Even if every one of those volunteers shuts their machine down the next morning, their signed attestation events persist on Nostr relays around the world. The signed snapshots are permanent witness statements: "On date X, these 50 pubkeys constituted the network, and here are the signatures from each one attesting to the others' presence."
 
-A state actor who later wants to stand up an impostor mirror has to defeat all 50 dated, cross-referenced signatures. They can't — those events are content-addressed and replicated. The vote of confidence already happened. It can't be retracted, edited, or shut down.
+A state actor who later wants to stand up an impostor mirror has to defeat all 50 dated, cross-referenced signatures. They can't — those events are content-addressed and replicated. The participation already happened. It can't be retracted, edited, or deleted.
+
+This is not a vote. It is a notarized record of dissent, signed by everyone who chose to put their pubkey to it, replicated in a way that makes silencing the record harder than producing it in the first place.
 
 ### Proof of participation
 
