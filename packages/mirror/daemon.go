@@ -2,9 +2,12 @@ package main
 
 import (
 	"crypto/ed25519"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand/v2"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 )
@@ -89,8 +92,28 @@ func (d *Daemon) Run(stop <-chan struct{}) {
 	beatTicker := time.NewTicker(jitterDuration(60*time.Second, 10*time.Second))
 	defer beatTicker.Stop()
 
+	// Periodically refresh propagation.json — distinct DHT providers can
+	// change as nodes pin/unpin. Every 10 minutes is a reasonable balance
+	// between freshness and DHT walk cost (each walk takes up to 30s).
+	propTicker := time.NewTicker(10 * time.Minute)
+	defer propTicker.Stop()
+
 	// Fire initial poll in background so heartbeat ticker starts immediately.
 	go d.poll()
+
+	// Seed propagation.json shortly after the first poll settles. Without
+	// this, propagation.json only exists after the next 10-min propTicker
+	// fire (or after the next actual version bump), which can be many
+	// minutes after startup for a steady-state mirror.
+	go func() {
+		time.Sleep(15 * time.Second)
+		d.stateMu.RLock()
+		cid := d.state.PinnedCID
+		d.stateMu.RUnlock()
+		if cid != "" {
+			d.updatePropagation(cid)
+		}
+	}()
 
 	for {
 		select {
@@ -99,6 +122,13 @@ func (d *Daemon) Run(stop <-chan struct{}) {
 		case <-beatTicker.C:
 			go d.heartbeat()
 			beatTicker.Reset(jitterDuration(60*time.Second, 10*time.Second))
+		case <-propTicker.C:
+			d.stateMu.RLock()
+			cid := d.state.PinnedCID
+			d.stateMu.RUnlock()
+			if cid != "" {
+				go d.updatePropagation(cid)
+			}
 		case <-stop:
 			log.Println("Daemon shutting down.")
 			d.pool.Close()
@@ -200,10 +230,50 @@ func (d *Daemon) poll() {
 		}
 	}
 
+	// Walk the DHT for distinct providers of this CID and publish the count
+	// to /propagation.json so the browser can show propagation evidence.
+	// Async because findprovs can take ~30s; don't block the daemon.
+	go d.updatePropagation(latest.CID)
+
 	// Fire one immediate heartbeat after a successful version bump so the new
 	// CID is visible to relays well before the next 30s tick. Subsequent
 	// heartbeats are handled by the ticker.
 	d.sendHeartbeat(latest)
+}
+
+// updatePropagation queries the DHT for providers of the CID and writes the
+// result to the configured propagation target. Best-effort: errors are
+// logged and any previous file is left intact.
+func (d *Daemon) updatePropagation(cid string) {
+	target := d.cfg.PropagationFile
+	if target == "" && d.cfg.ServeDir != "" {
+		target = filepath.Join(d.cfg.ServeDir, "propagation.json")
+	}
+	if target == "" {
+		return
+	}
+	provs, err := d.ipfs.FindProvs(cid, 40, 30*time.Second)
+	if err != nil {
+		log.Printf("findprovs %s: %v", cid[:12]+"...", err)
+		return
+	}
+	out := struct {
+		CID       string   `json:"cid"`
+		Providers int      `json:"providers"`
+		PeerIDs   []string `json:"peer_ids,omitempty"`
+		Generated int64    `json:"generated"`
+	}{
+		CID:       cid,
+		Providers: len(provs),
+		PeerIDs:   provs,
+		Generated: time.Now().Unix(),
+	}
+	b, _ := json.MarshalIndent(&out, "", "  ")
+	if err := os.WriteFile(target, b, 0644); err != nil {
+		log.Printf("write propagation.json: %v", err)
+		return
+	}
+	log.Printf("propagation.json: %d distinct peers providing %s", len(provs), cid[:12]+"...")
 }
 
 func (d *Daemon) sendHeartbeat(latest *Latest) {

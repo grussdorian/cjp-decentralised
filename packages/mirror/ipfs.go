@@ -74,6 +74,55 @@ func (c *ipfsClient) Ping() bool {
 	return resp.StatusCode == http.StatusOK
 }
 
+// FindProvs walks the DHT for up to `limit` providers of the given CID,
+// stopping when the timeout elapses or enough providers are found. Returns
+// the set of distinct peer IDs.
+//
+// The kubo /api/v0/routing/findprovs endpoint streams NDJSON; we consume
+// until the stream ends, the deadline hits, or we've collected enough.
+func (c *ipfsClient) FindProvs(cid string, limit int, timeout time.Duration) ([]string, error) {
+	url := fmt.Sprintf("%s/api/v0/routing/findprovs?arg=%s&num-providers=%d", c.base, cid, limit)
+	cl := &http.Client{Timeout: timeout}
+	resp, err := cl.Post(url, "application/json", nil)
+	if err != nil {
+		return nil, fmt.Errorf("findprovs: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("findprovs returned %d: %s", resp.StatusCode, body)
+	}
+
+	// Each line is a separate JSON object — kubo streams them as it finds
+	// providers. We collect distinct peer IDs.
+	seen := make(map[string]struct{})
+	dec := json.NewDecoder(resp.Body)
+	for dec.More() {
+		var ev struct {
+			ID        string `json:"ID"`
+			Responses []struct {
+				ID string `json:"ID"`
+			} `json:"Responses"`
+		}
+		if err := dec.Decode(&ev); err != nil {
+			break
+		}
+		for _, r := range ev.Responses {
+			if r.ID != "" {
+				seen[r.ID] = struct{}{}
+			}
+		}
+		if len(seen) >= limit {
+			break
+		}
+	}
+	out := make([]string, 0, len(seen))
+	for p := range seen {
+		out = append(out, p)
+	}
+	return out, nil
+}
+
 // unsafeServeDirs are paths GetTar refuses to operate on, regardless of config.
 // Defends against misconfigured SERVE_DIR (e.g. SERVE_DIR=/etc).
 var unsafeServeDirs = map[string]bool{

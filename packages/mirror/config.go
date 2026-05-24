@@ -28,6 +28,13 @@ type Config struct {
 	// it is broadcast in heartbeat events so browsers can discover it and
 	// merge it into their query pool — federation grows with volunteer count.
 	MirrorRelayURL string
+
+	// PropagationFile is the explicit path to write propagation.json (DHT
+	// provider snapshot). If empty, defaults to ServeDir/propagation.json
+	// when ServeDir is set. Set this explicitly when the mirror doesn't
+	// auto-populate a serve dir (e.g. when nginx serves a directly-mounted
+	// dist/ instead of the auto-updated one).
+	PropagationFile string
 }
 
 func defaultConfig() Config {
@@ -43,8 +50,9 @@ func defaultConfig() Config {
 		MirrorURL: envOr("MIRROR_URL", ""),
 		GatewayURL:     envOr("IPFS_GATEWAY", ""),
 		ServeDir:       envOr("SERVE_DIR", ""),
-		LocalRelay:     envOr("LOCAL_RELAY", ""),
-		MirrorRelayURL: envOr("MIRROR_RELAY_URL", ""),
+		LocalRelay:      envOr("LOCAL_RELAY", ""),
+		MirrorRelayURL:  envOr("MIRROR_RELAY_URL", ""),
+		PropagationFile: envOr("PROPAGATION_FILE", ""),
 	}
 }
 
