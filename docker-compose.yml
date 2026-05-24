@@ -5,7 +5,7 @@ services:
     ports:
       - "4001:4001"   # swarm
       - "127.0.0.1:5001:5001"  # API (local only)
-      - "127.0.0.1:8080:8080"  # gateway (local only)
+      - "127.0.0.1:8082:8080"  # gateway (local only)
     volumes:
       - ipfs_data:/data/ipfs
 

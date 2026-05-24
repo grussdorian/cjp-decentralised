@@ -54,13 +54,14 @@ func newDaemon(cfg Config) (*Daemon, error) {
 func (d *Daemon) Run(stop <-chan struct{}) {
 	log.Printf("Mirror daemon started (poll: %s, heartbeat: 30s)", d.cfg.PollInterval)
 
-	d.poll()
-
 	pollTicker := time.NewTicker(d.cfg.PollInterval)
 	defer pollTicker.Stop()
 
 	beatTicker := time.NewTicker(30 * time.Second)
 	defer beatTicker.Stop()
+
+	// Fire initial poll in background so heartbeat ticker starts immediately.
+	go d.poll()
 
 	for {
 		select {
