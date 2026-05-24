@@ -18,11 +18,17 @@
   'use strict';
 
   const REPO     = 'https://raw.githubusercontent.com/grussdorian/cjp-decentralised/main';
+  // Gateway list ordered by observed reliability for fresh CIDs.
+  // dweb.link and w3s.link consistently return fast; ipfs.io frequently
+  // hangs on newly-published CIDs while it does DHT lookup.
+  // cloudflare-ipfs.com was deprecated by Cloudflare in 2024 — removed.
   const GATEWAYS = [
-    'https://ipfs.io/ipfs',
-    'https://cloudflare-ipfs.com/ipfs',
     'https://dweb.link/ipfs',
+    'https://w3s.link/ipfs',
+    'https://ipfs.io/ipfs',
   ];
+  // Default gateway for user-facing "open on IPFS" links — first in GATEWAYS.
+  const PRIMARY_GATEWAY = GATEWAYS[0];
 
   // Trusted Ed25519 public keys (hex) — hardcoded so that GitHub cannot swap
   // in attacker-controlled keys by modifying trusted-signers.json.
@@ -94,7 +100,7 @@
     const msgBytes = new TextEncoder().encode(`${latest.cid}\n${latest.version}\n${latest.timestamp}`);
     msgHash = await crypto.subtle.digest('SHA-256', msgBytes);
   } catch (_) {
-    set('unknown', '? Ed25519 not supported in this browser — <a href="https://ipfs.io/ipfs/' + latest.cid + '" target="_blank" rel="noopener noreferrer">verify via IPFS</a>');
+    set('unknown', '? Ed25519 not supported in this browser — <a href="' + PRIMARY_GATEWAY + '/' + latest.cid + '" target="_blank" rel="noopener noreferrer">verify via IPFS</a>');
     return;
   }
 
@@ -126,7 +132,7 @@
   }
 
   const short = c => c.slice(0, 16) + '…';
-  const gwLink = `<a class="cjp-badge__cid" href="https://ipfs.io/ipfs/${latest.cid}" target="_blank" rel="noopener noreferrer" title="Open canonical version on IPFS">${short(latest.cid)}</a>`;
+  const gwLink = `<a class="cjp-badge__cid" href="${PRIMARY_GATEWAY}/${latest.cid}" target="_blank" rel="noopener noreferrer" title="Open canonical version on IPFS">${short(latest.cid)}</a>`;
 
   // Short fingerprint: first 8 + last 4 hex chars, e.g. "c1688ff0…b5c3"
   // Shown in the badge so users can cross-check against out-of-band sources

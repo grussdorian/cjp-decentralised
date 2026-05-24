@@ -110,7 +110,7 @@ export async function loadMirrorStats(countEl, listEl) {
 
     if (typeof data.cid === 'string' && CID_PATTERN.test(data.cid)) {
       small.appendChild(el('a', {
-        href: 'https://ipfs.io/ipfs/' + data.cid,
+        href: 'https://dweb.link/ipfs/' + data.cid,
         target: '_blank',
         rel: 'noopener noreferrer',
         style: 'color:var(--muted)',
