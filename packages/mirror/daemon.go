@@ -4,6 +4,7 @@ import (
 	"crypto/ed25519"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 )
 
@@ -14,6 +15,15 @@ type Daemon struct {
 	trustedKeys []ed25519.PublicKey
 	state       *State
 	peerID      string
+
+	// pollMu serialises poll() — TryLock means a tick fired while a previous
+	// poll is still running (slow pin, GetTar over a slow link) is skipped
+	// rather than racing it.
+	pollMu sync.Mutex
+
+	// stateMu guards mutations to *state from poll() and concurrent reads
+	// from heartbeat(). poll() writes; heartbeat reads.
+	stateMu sync.RWMutex
 }
 
 func newDaemon(cfg Config) (*Daemon, error) {
@@ -77,14 +87,24 @@ func (d *Daemon) Run(stop <-chan struct{}) {
 }
 
 func (d *Daemon) heartbeat() {
-	if d.state.PinnedCID == "" {
+	d.stateMu.RLock()
+	cid := d.state.PinnedCID
+	ver := d.state.PinnedVer
+	d.stateMu.RUnlock()
+	if cid == "" {
 		return
 	}
-	latest := &Latest{CID: d.state.PinnedCID, Version: d.state.PinnedVer}
-	d.sendHeartbeat(latest)
+	d.sendHeartbeat(&Latest{CID: cid, Version: ver})
 }
 
 func (d *Daemon) poll() {
+	// Skip if a previous poll is still in flight (slow pin or GetTar).
+	if !d.pollMu.TryLock() {
+		log.Println("poll already in progress, skipping this tick")
+		return
+	}
+	defer d.pollMu.Unlock()
+
 	urls := buildLatestURLs(d.cfg)
 	latest, source, err := fetchLatest(urls)
 	if err != nil {
@@ -105,14 +125,19 @@ func (d *Daemon) poll() {
 	}
 	log.Printf("Verified %d/%d signatures (threshold: %d)", n, len(d.ts.Signers), d.ts.Threshold)
 
+	d.stateMu.RLock()
+	prevCID := d.state.PinnedCID
+	prevVer := d.state.PinnedVer
+	d.stateMu.RUnlock()
+
 	// Already on this version?
-	if latest.CID == d.state.PinnedCID {
+	if latest.CID == prevCID {
 		log.Printf("Already pinned v%d, nothing to do", latest.Version)
 		d.sendHeartbeat(latest)
 		return
 	}
-	if latest.Version <= d.state.PinnedVer && d.state.PinnedVer > 0 {
-		log.Printf("Received v%d but already have v%d — ignoring downgrade", latest.Version, d.state.PinnedVer)
+	if latest.Version <= prevVer && prevVer > 0 {
+		log.Printf("Received v%d but already have v%d — ignoring downgrade", latest.Version, prevVer)
 		return
 	}
 
@@ -129,19 +154,20 @@ func (d *Daemon) poll() {
 	log.Printf("Pinned v%d successfully", latest.Version)
 
 	// Unpin old CID (best-effort, grace period)
-	if d.state.PinnedCID != "" && d.state.PinnedCID != latest.CID {
-		log.Printf("Unpinning old CID %s...", d.state.PinnedCID[:12]+"...")
-		d.ipfs.PinRm(d.state.PinnedCID)
+	if prevCID != "" && prevCID != latest.CID {
+		log.Printf("Unpinning old CID %s...", prevCID[:12]+"...")
+		d.ipfs.PinRm(prevCID)
 	}
 
 	// Update state
-	prev := d.state.PinnedCID
+	d.stateMu.Lock()
 	d.state.PinnedCID = latest.CID
 	d.state.PinnedVer = latest.Version
-	if err := saveState(d.cfg.StateFile, d.state); err != nil {
+	stateCopy := *d.state
+	d.stateMu.Unlock()
+	if err := saveState(d.cfg.StateFile, &stateCopy); err != nil {
 		log.Printf("save state: %v", err)
 	}
-	_ = prev
 
 	// Populate serve directory so clearweb mirrors auto-update.
 	if d.cfg.ServeDir != "" && d.cfg.GatewayURL != "" {
@@ -157,10 +183,13 @@ func (d *Daemon) poll() {
 }
 
 func (d *Daemon) sendHeartbeat(latest *Latest) {
-	if d.state.NostrSK == "" {
+	d.stateMu.RLock()
+	sk := d.state.NostrSK
+	d.stateMu.RUnlock()
+	if sk == "" {
 		return
 	}
-	if err := broadcastHeartbeat(d.state.NostrSK, d.peerID, latest.CID, d.cfg.Country, d.cfg.MirrorURL, latest.Version); err != nil {
+	if err := broadcastHeartbeat(sk, d.peerID, latest.CID, d.cfg.Country, d.cfg.MirrorURL, latest.Version); err != nil {
 		log.Printf("heartbeat: %v", err)
 	} else {
 		log.Println("Heartbeat sent to Nostr")

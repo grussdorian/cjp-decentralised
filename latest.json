@@ -1,12 +1,12 @@
 {
-  "cid": "bafybeidno3epkhw5guhruldaogwoy5wko3oyckgqkoymquhig4mthyesra",
-  "version": 20,
-  "timestamp": 1779584097,
-  "note": "fix: run poll and heartbeat in goroutines so select loop never blocks",
+  "cid": "bafybeift7z6lwcbquelwe6ke53jhdvaquq75wpccgvuy475yjbscfk2dpa",
+  "version": 21,
+  "timestamp": 1779585097,
+  "note": "fix: serialise poll(), guard state with mutex, atomic-swap serve dir, mask file modes",
   "signatures": [
     {
       "signer": "c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3",
-      "signature": "ae19592e22ff4faaee583b80277358a11174a7589a80c8bf1b04aa37589f3f532019a71f588fe8ab3b782004f4eaedf123906d86cd776ca3ae8d7c8b86888c0e"
+      "signature": "a3a7d8f00624977c7ed2803a9cf07687a509d254a1f4ecd696c447a352d8dc704b2ca54cf2eeda37448b463af853a0d078cb9b64d729b018ad7c048a8a310603"
     }
   ]
 }

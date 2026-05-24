@@ -74,9 +74,37 @@ func (c *ipfsClient) Ping() bool {
 	return resp.StatusCode == http.StatusOK
 }
 
-// GetTar fetches CID content as a tar from the IPFS API and extracts it to dstDir.
-// DstDir is cleared first. Safe against path traversal.
+// unsafeServeDirs are paths GetTar refuses to operate on, regardless of config.
+// Defends against misconfigured SERVE_DIR (e.g. SERVE_DIR=/etc).
+var unsafeServeDirs = map[string]bool{
+	"/": true, "/etc": true, "/usr": true, "/var": true, "/bin": true,
+	"/sbin": true, "/lib": true, "/lib64": true, "/root": true,
+	"/home": true, "/boot": true, "/dev": true, "/proc": true,
+	"/sys": true, "/opt": true, "/srv": true, "/tmp": true,
+}
+
+func validateServeDir(p string) error {
+	clean := filepath.Clean(p)
+	if clean == "" || clean == "." || clean == "/" {
+		return fmt.Errorf("refusing to operate on unsafe serve dir: %q", p)
+	}
+	if unsafeServeDirs[clean] {
+		return fmt.Errorf("refusing to operate on system serve dir: %q", p)
+	}
+	return nil
+}
+
+// GetTar fetches CID content as a tar from the IPFS API and writes it to dstDir.
+// Extraction happens in a sibling staging subdir; only after the tar is fully
+// extracted are old entries removed and new ones promoted. If extraction fails
+// midway, the live serve dir is untouched.
+//
+// Path traversal entries in the tar are skipped silently.
 func (c *ipfsClient) GetTar(cid, dstDir string) error {
+	if err := validateServeDir(dstDir); err != nil {
+		return err
+	}
+
 	url := fmt.Sprintf("%s/api/v0/get?arg=%s", c.base, cid)
 	resp, err := c.client.Post(url, "application/json", nil)
 	if err != nil {
@@ -88,13 +116,29 @@ func (c *ipfsClient) GetTar(cid, dstDir string) error {
 		return fmt.Errorf("ipfs get returned %d: %s", resp.StatusCode, body)
 	}
 
-	// Clear destination
-	if err := os.RemoveAll(dstDir); err != nil {
-		return fmt.Errorf("clear serve dir: %w", err)
-	}
+	// Ensure dstDir exists, but do NOT remove it — it may be a bind mount or
+	// Docker volume mountpoint, and removing the mountpoint itself breaks the
+	// mount or fails with EBUSY.
 	if err := os.MkdirAll(dstDir, 0755); err != nil {
 		return fmt.Errorf("create serve dir: %w", err)
 	}
+
+	// Extract into a staging subdirectory inside dstDir so a failed extraction
+	// leaves the live content alone.
+	staging := filepath.Join(dstDir, ".cjp-staging")
+	if err := os.RemoveAll(staging); err != nil {
+		return fmt.Errorf("clear staging: %w", err)
+	}
+	if err := os.MkdirAll(staging, 0755); err != nil {
+		return fmt.Errorf("create staging: %w", err)
+	}
+	// Cleanup staging on any error path.
+	success := false
+	defer func() {
+		if !success {
+			os.RemoveAll(staging)
+		}
+	}()
 
 	tr := tar.NewReader(resp.Body)
 	var stripPrefix string
@@ -119,17 +163,18 @@ func (c *ipfsClient) GetTar(cid, dstDir string) error {
 			continue
 		}
 
-		target := filepath.Join(dstDir, rel)
-		if !strings.HasPrefix(filepath.Clean(target), filepath.Clean(dstDir)+string(os.PathSeparator)) {
+		target := filepath.Join(staging, rel)
+		if !strings.HasPrefix(filepath.Clean(target), filepath.Clean(staging)+string(os.PathSeparator)) {
 			continue // path traversal attempt
 		}
 
+		// Mask file modes from untrusted tar — only honour permission bits we trust.
 		switch hdr.Typeflag {
 		case tar.TypeDir:
 			os.MkdirAll(target, 0755)
 		case tar.TypeReg:
 			os.MkdirAll(filepath.Dir(target), 0755)
-			f, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.FileMode(hdr.Mode))
+			f, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 			if err != nil {
 				return fmt.Errorf("create %s: %w", rel, err)
 			}
@@ -140,5 +185,37 @@ func (c *ipfsClient) GetTar(cid, dstDir string) error {
 			f.Close()
 		}
 	}
+
+	// Promote: remove old top-level entries (except staging itself), then move
+	// each new entry from staging into dstDir. Rename is atomic per-file on
+	// POSIX so each file flips from old to new instantly.
+	oldEntries, err := os.ReadDir(dstDir)
+	if err != nil {
+		return fmt.Errorf("read serve dir: %w", err)
+	}
+	for _, e := range oldEntries {
+		if e.Name() == ".cjp-staging" {
+			continue
+		}
+		if err := os.RemoveAll(filepath.Join(dstDir, e.Name())); err != nil {
+			return fmt.Errorf("remove old %s: %w", e.Name(), err)
+		}
+	}
+	newEntries, err := os.ReadDir(staging)
+	if err != nil {
+		return fmt.Errorf("read staging: %w", err)
+	}
+	for _, e := range newEntries {
+		src := filepath.Join(staging, e.Name())
+		dst := filepath.Join(dstDir, e.Name())
+		if err := os.Rename(src, dst); err != nil {
+			return fmt.Errorf("promote %s: %w", e.Name(), err)
+		}
+	}
+	if err := os.Remove(staging); err != nil {
+		// Non-fatal — staging should be empty; if not, next run wipes it.
+		os.RemoveAll(staging)
+	}
+	success = true
 	return nil
 }

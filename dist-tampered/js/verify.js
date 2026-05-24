@@ -161,9 +161,13 @@
 
   let actualHash;
   try {
-    const resp  = await fetch(location.pathname + location.search, { cache: 'no-cache' });
-    const bytes = await resp.arrayBuffer();
-    actualHash  = bytesToHex(await crypto.subtle.digest('SHA-256', bytes));
+    const resp = await fetch(location.pathname + location.search, { cache: 'no-cache' });
+    const text = await resp.text();
+    // Strip <script> tags before hashing — CDN providers (e.g. Cloudflare) inject
+    // scripts into HTML responses without modifying the signed content. We verify
+    // the document body, not the delivery wrapper.
+    const stripped = text.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
+    actualHash = bytesToHex(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(stripped)));
   } catch (_) {
     set('verified', `✓ Signed · ${gwLink} · v${latest.version} · ${sigLabel} · <small>page re-fetch blocked</small>`);
     return;
