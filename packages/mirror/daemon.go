@@ -4,6 +4,7 @@ import (
 	"crypto/ed25519"
 	"fmt"
 	"log"
+	"math/rand/v2"
 	"sync"
 	"time"
 )
@@ -15,6 +16,11 @@ type Daemon struct {
 	trustedKeys []ed25519.PublicKey
 	state       *State
 	peerID      string
+
+	// pool holds long-lived WebSocket connections to heartbeat relays so each
+	// beat is a tiny frame on an existing connection rather than a fresh
+	// TLS+WSS handshake. CF rate-limits the handshake pattern after hours.
+	pool *RelayPool
 
 	// pollMu serialises poll() — TryLock means a tick fired while a previous
 	// poll is still running (slow pin, GetTar over a slow link) is skipped
@@ -57,17 +63,22 @@ func newDaemon(cfg Config) (*Daemon, error) {
 		trustedKeys: keys,
 		state:       state,
 		peerID:      peerID,
+		pool:        NewRelayPool(heartbeatRelays),
 	}, nil
 }
 
 // Run starts the poll loop and heartbeat ticker. Blocks until stop is closed.
 func (d *Daemon) Run(stop <-chan struct{}) {
-	log.Printf("Mirror daemon started (poll: %s, heartbeat: 30s)", d.cfg.PollInterval)
+	log.Printf("Mirror daemon started (poll: %s, heartbeat: ~60s ±10s jittered)", d.cfg.PollInterval)
 
 	pollTicker := time.NewTicker(d.cfg.PollInterval)
 	defer pollTicker.Stop()
 
-	beatTicker := time.NewTicker(30 * time.Second)
+	// Jittered 50-70s heartbeat: time.NewTicker only jitters the *first* tick.
+	// We reset the ticker after every beat so the cadence keeps shifting —
+	// otherwise we lock into a fixed interval that CF's abuse detection can
+	// latch onto across hours.
+	beatTicker := time.NewTicker(jitterDuration(60*time.Second, 10*time.Second))
 	defer beatTicker.Stop()
 
 	// Fire initial poll in background so heartbeat ticker starts immediately.
@@ -79,8 +90,10 @@ func (d *Daemon) Run(stop <-chan struct{}) {
 			go d.poll()
 		case <-beatTicker.C:
 			go d.heartbeat()
+			beatTicker.Reset(jitterDuration(60*time.Second, 10*time.Second))
 		case <-stop:
 			log.Println("Daemon shutting down.")
+			d.pool.Close()
 			return
 		}
 	}
@@ -192,9 +205,13 @@ func (d *Daemon) sendHeartbeat(latest *Latest) {
 	if sk == "" {
 		return
 	}
-	if err := broadcastHeartbeat(sk, d.peerID, latest.CID, d.cfg.Country, d.cfg.MirrorURL, latest.Version); err != nil {
+	if err := broadcastHeartbeat(d.pool, sk, d.peerID, latest.CID, d.cfg.Country, d.cfg.MirrorURL, latest.Version); err != nil {
 		log.Printf("heartbeat: %v", err)
 	} else {
 		log.Println("Heartbeat sent to Nostr")
 	}
+}
+
+func jitterDuration(base, spread time.Duration) time.Duration {
+	return base + time.Duration(rand.Int64N(int64(spread*2+1))) - spread
 }

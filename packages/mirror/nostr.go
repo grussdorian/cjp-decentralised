@@ -9,12 +9,17 @@ import (
 	"github.com/nbd-wtf/go-nostr"
 )
 
+// heartbeatRelays is intentionally mixed: CF-fronted and self-hosted/community
+// relays side by side so the heartbeat broadcast doesn't depend on any single
+// CDN's rate-limiter. CF *for reading* (browser → relays) is reliable; CF
+// *for writing* (this daemon → relays every minute) trips abuse detection
+// after a few hours from the same IP. Diversify the egress path.
 var heartbeatRelays = []string{
-	"wss://relay.damus.io",
-	"wss://nos.lol",
-	"wss://nostr.wine",
-	"wss://relay.nostr.band",
-	"wss://offchain.pub",
+	"wss://relay.damus.io",     // CF-fronted (Damus team)
+	"wss://relay.primal.net",   // self-hosted (Primal team)
+	"wss://nos.lol",            // CF-fronted (community)
+	"wss://nostr.mom",          // community, non-CF
+	"wss://relay.snort.social", // Fly.io (Snort team)
 }
 
 // ensureNostrKey generates a Nostr key for this mirror if one doesn't exist yet.
@@ -27,7 +32,11 @@ func ensureNostrKey(state *State) {
 // broadcastHeartbeat publishes a signed Nostr event announcing this mirror is alive.
 // url is optional — set it to the public clearweb URL of this mirror (e.g. https://mymirror.example.com)
 // so that the mirror registry on the site can list it as a clickable link.
-func broadcastHeartbeat(nostrSK, peerID, cid, country, url string, version int64) error {
+//
+// Uses a RelayPool so the connection to each relay survives across heartbeats.
+// Without this, every 30-60s tick re-did a full TLS+WSS handshake and CF's
+// abuse detection rate-limited the daemon after a few hours.
+func broadcastHeartbeat(pool *RelayPool, nostrSK, peerID, cid, country, url string, version int64) error {
 	fields := map[string]interface{}{
 		"peer_id": peerID,
 		"cid":     cid,
@@ -56,18 +65,7 @@ func broadcastHeartbeat(nostrSK, peerID, cid, country, url string, version int64
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	ok := 0
-	for _, url := range heartbeatRelays {
-		relay, err := nostr.RelayConnect(ctx, url)
-		if err != nil {
-			continue
-		}
-		if relay.Publish(ctx, ev) == nil {
-			ok++
-		}
-		relay.Close()
-	}
-	if ok == 0 {
+	if ok := pool.Publish(ctx, ev); ok == 0 {
 		return fmt.Errorf("no heartbeat relays responded")
 	}
 	return nil
