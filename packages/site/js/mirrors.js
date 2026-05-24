@@ -1,7 +1,7 @@
 // Queries Nostr relays for mirror heartbeat events and displays live stats.
 import { RELAYS, MIRROR_TAG } from './relays.js';
 
-const ONE_HOUR = 120;
+const ONE_HOUR = 300;
 
 export async function loadMirrorStats(countEl, listEl) {
   const since = Math.floor(Date.now() / 1000) - ONE_HOUR;

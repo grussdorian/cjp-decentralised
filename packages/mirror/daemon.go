@@ -66,9 +66,9 @@ func (d *Daemon) Run(stop <-chan struct{}) {
 	for {
 		select {
 		case <-pollTicker.C:
-			d.poll()
+			go d.poll()
 		case <-beatTicker.C:
-			d.heartbeat()
+			go d.heartbeat()
 		case <-stop:
 			log.Println("Daemon shutting down.")
 			return
