@@ -145,7 +145,7 @@ COUNTRY=IN \
       if (typeof d.cid === 'string' && /^[A-Za-z0-9]{20,80}$/.test(d.cid)) {
         target.replaceChildren();
         const a = document.createElement('a');
-        a.href = 'https://dweb.link/ipfs/' + d.cid;
+        a.href = '/ipfs/' + d.cid;
         a.target = '_blank';
         a.rel = 'noopener noreferrer';
         a.style.cssText = 'color:var(--text);text-decoration:underline;text-underline-offset:3px';

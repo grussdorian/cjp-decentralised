@@ -109,8 +109,15 @@ export async function loadMirrorStats(countEl, listEl) {
     small.append(country, ' · ');
 
     if (typeof data.cid === 'string' && CID_PATTERN.test(data.cid)) {
+      // Federation: prefer the originating mirror's own gateway when it
+      // advertises a URL — that mirror has the CID pinned by definition.
+      // Fall back to dweb.link if no URL is advertised.
+      const advertisedURL = safeURL(data.url);
+      const cidHref = advertisedURL
+        ? advertisedURL.origin + '/ipfs/' + data.cid
+        : 'https://dweb.link/ipfs/' + data.cid;
       small.appendChild(el('a', {
-        href: 'https://dweb.link/ipfs/' + data.cid,
+        href: cidHref,
         target: '_blank',
         rel: 'noopener noreferrer',
         style: 'color:var(--muted)',

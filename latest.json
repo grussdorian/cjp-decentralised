@@ -1,12 +1,12 @@
 {
-  "cid": "bafybeigg4so4ybcuosu5zp2fp6vnm3reudcudifk2ywevpcolcq36ktjwy",
-  "version": 25,
-  "timestamp": 1779629828,
-  "note": "fix: og:url + canonical meta tags so link unfurlers (X/Twitter) ignore the redirect target",
+  "cid": "bafybeicojv66csumzm77yuhvqdlwir3gq4u2qx5fjumk7fce7oc32tysse",
+  "version": 26,
+  "timestamp": 1779630921,
+  "note": "feat: self-hosted /ipfs gateway per mirror — sub-100ms CID links, no third party",
   "signatures": [
     {
       "signer": "c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3",
-      "signature": "89abc84d459e2802ecc2a949f9b8091e5fee0da11006642d4f7110aa55a74444259e7abe4e9d8d7243f5d4fc49b29a8b053b022802f86faed3d09d9061dbc201"
+      "signature": "354f563279e2258150b8d436fc1e7857e28da151e54ffb6213f25fb9f64dcfd89e622fdea6907c6804eb32fd7e43979c9acb8c0a343eb6c2dc11eef78e30da02"
     }
   ]
 }

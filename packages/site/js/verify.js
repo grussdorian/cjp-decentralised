@@ -18,17 +18,18 @@
   'use strict';
 
   const REPO     = 'https://raw.githubusercontent.com/grussdorian/cjp-decentralised/main';
-  // Gateway list ordered by observed reliability for fresh CIDs.
-  // dweb.link and w3s.link consistently return fast; ipfs.io frequently
-  // hangs on newly-published CIDs while it does DHT lookup.
-  // cloudflare-ipfs.com was deprecated by Cloudflare in 2024 — removed.
+  // GATEWAYS is used for the integrity.json fetch — multi-gateway race so the
+  // verification path stays independent of any single provider.
   const GATEWAYS = [
     'https://dweb.link/ipfs',
     'https://w3s.link/ipfs',
     'https://ipfs.io/ipfs',
   ];
-  // Default gateway for user-facing "open on IPFS" links — first in GATEWAYS.
-  const PRIMARY_GATEWAY = GATEWAYS[0];
+  // User-facing "open on IPFS" links use the SAME-ORIGIN gateway — every
+  // mirror bundles a kubo node with the current CID pinned, so first-byte
+  // latency is consistently <100ms and there's no dependency on any
+  // third-party gateway being fast on the current CID.
+  const PRIMARY_GATEWAY = '/ipfs';
 
   // Trusted Ed25519 public keys (hex) — hardcoded so that GitHub cannot swap
   // in attacker-controlled keys by modifying trusted-signers.json.

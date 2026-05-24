@@ -20,14 +20,14 @@ More mirrors are listed live at [cjp.fheya.de/mirror.html](https://cjp.fheya.de/
 Every mirror shows a badge at the bottom of each page. To verify independently:
 
 1. Open [`latest.json`](latest.json) in this repo. Note the `version` number and `cid`.
-2. Open any mirror — the badge must show the **same version number** and **same IPFS CID** (`bafybeigg4so4ybcuosu5zp2fp6vnm3reudcudifk2ywevpcolcq36ktjwy`).
+2. Open any mirror — the badge must show the **same version number** and **same IPFS CID** (`bafybeicojv66csumzm77yuhvqdlwir3gq4u2qx5fjumk7fce7oc32tysse`).
 3. The key fingerprint in the badge (`c1688ff0…b5c3`) must match [trusted-signers.json](trusted-signers.json).
 
 If a mirror shows a different CID, a different version, or a different fingerprint — it is not serving authentic content.
 
 You can also fetch the content directly from IPFS:
 ```
-https://dweb.link/ipfs/bafybeigg4so4ybcuosu5zp2fp6vnm3reudcudifk2ywevpcolcq36ktjwy
+https://dweb.link/ipfs/bafybeicojv66csumzm77yuhvqdlwir3gq4u2qx5fjumk7fce7oc32tysse
 ```
 
 ## Run a volunteer mirror
@@ -108,10 +108,26 @@ Signing authority is intentionally restricted. Contact the repository owner dire
 | Method | Address |
 |--------|---------|
 | Clearweb mirrors | listed at [/mirror](https://cjp.fheya.de/mirror.html) on the site |
-| IPFS gateway | [`dweb.link/ipfs/bafybeigg4so4ybcuosu5zp2fp6vnm3reudcudifk2ywevpcolcq36ktjwy`](https://dweb.link/ipfs/bafybeigg4so4ybcuosu5zp2fp6vnm3reudcudifk2ywevpcolcq36ktjwy) |
+| IPFS gateway | [`dweb.link/ipfs/bafybeicojv66csumzm77yuhvqdlwir3gq4u2qx5fjumk7fce7oc32tysse`](https://dweb.link/ipfs/bafybeicojv66csumzm77yuhvqdlwir3gq4u2qx5fjumk7fce7oc32tysse) |
 | IPNS | pending |
 | ENS | `cockroachjanataparty.eth` — pending on-chain registration |
 | Tor | pending hidden service setup |
+
+## Federated IPFS gateway (bundled)
+
+Every mirror bundles a [kubo](https://github.com/ipfs/kubo) IPFS node with the current CID always pinned. The bundled `nginx.conf` reverse-proxies `/ipfs/<CID>` and `/ipns/<name>` straight to it. CID links on every page resolve same-origin: no DHT lookup, no third-party gateway flakiness, sub-100ms first-byte every time.
+
+**To enable on your mirror:** set `MIRROR_HOST` in `.env` or `docker-compose.override.yml` to the hostname your reverse proxy serves on. The kubo init script configures the gateway to use path-mode (instead of the default subdomain mode, which would otherwise redirect `/ipfs/<CID>` to `<CID>.ipfs.<host>`).
+
+```yaml
+# docker-compose.override.yml
+services:
+  ipfs:
+    environment:
+      MIRROR_HOST: "cjp.mirror.example.com"
+```
+
+The mirror list on `/mirror.html` automatically links each mirror's advertised CID to that mirror's own gateway — federation works for cross-mirror browsing too.
 
 ## Federated relay (bundled)
 

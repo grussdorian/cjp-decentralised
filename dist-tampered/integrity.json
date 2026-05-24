@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-24T13:36:58.312Z",
+  "generated": "2026-05-24T13:55:14.136Z",
   "files": {
     "bn/demand.html": "50ceb23d45eab410f98ef0fd90694ea736ef9504393300a251c0f4c4b56678df",
     "bn/index.html": "4e5d270121ddc90da0fcef2664bee25cd418405f969b5421372fb1ecc5d40286",
@@ -15,11 +15,11 @@
     "join.html": "56b90bbdb11c97eeb52d738936fda158465940c2534f353f1b2a8b09ccbe01eb",
     "js/age-encryption.bundle.js": "ea0a0ee5eadd2276fecc64a911979285f7dbbd4a290abfcd66c6ae65f36c3026",
     "js/forms.js": "bebb7749c179da7433ed4507d1035e7ab6bd4dc3cd83286ccadb3ed6234cdbeb",
-    "js/mirrors.js": "cdb4fce52998d8ff2fd4fa9e48537bebfb22bb6836a7783ec3bc47b6ce6b8f65",
+    "js/mirrors.js": "73ce2e47d400c06c60421640ace092d5aa8a8a2714046d17d52a4523e8c2af36",
     "js/nostr-tools.bundle.js": "eda4a17ecbef9b28b040f47225d75bcce49b3e27a2c08bd48cba8e3f1d47d79b",
     "js/pow-worker.js": "9a8a072aa4ecd33a0585e1fc11744588017978161b2fcb49670cacda607e845f",
     "js/relays.js": "372e056cebe396299e54d71d9b5228ff7389df821f509e8b8bbdc23d9b385e14",
-    "js/verify.js": "9bf0243130351eb29d640314ebf87a29ecb10da909b80631b7a78be73125a16a",
+    "js/verify.js": "a62d1f63a055b80eaf37b137deba9fc99046aeb71b6ce9bdea708831391da6bb",
     "mirror.html": "1ea2d33a6666d5653ff45b5ebae5c81bcfd64b78f3f5ee9251c2fc0c9dfa2692",
     "ta/demand.html": "b4f78110087b0ddd00ff0de3aac3a69ec14f655727e3b9550d4e5c24855ec8c0",
     "ta/index.html": "79f6c3fc0b12e233ef71c361d22ccab015817c1a0d08d3a36a747740a3628437",

@@ -6,8 +6,15 @@ services:
       - "4001:4001"   # swarm
       - "127.0.0.1:5001:5001"  # API (local only)
       - "127.0.0.1:8082:8080"  # gateway (local only)
+    environment:
+      # Set MIRROR_HOST to the hostname your nginx reverse proxy serves on
+      # (e.g. cjp.example.com). The init script then configures kubo for
+      # path-mode gateway serving so /ipfs/<CID> works without subdomain
+      # redirects. Leave blank if you only use the gateway internally.
+      MIRROR_HOST: "${MIRROR_HOST:-}"
     volumes:
       - ipfs_data:/data/ipfs
+      - ./scripts/ipfs-init-public-gateway.sh:/container-init.d/01-public-gateway.sh:ro
 
   # Bundled strfry relay. Mirror daemon writes heartbeats here first
   # (guaranteed local success), then to public relays for federation.
