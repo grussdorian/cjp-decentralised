@@ -9,23 +9,32 @@ import (
 	"github.com/nbd-wtf/go-nostr"
 )
 
+// publishRelays mirrors the daemon's heartbeatRelays — see
+// packages/mirror/nostr.go. Mixed CF/non-CF set so update broadcasts don't
+// depend on any single CDN's availability.
 var publishRelays = []string{
-	"wss://relay.damus.io",
-	"wss://nos.lol",
-	"wss://nostr.wine",
-	"wss://relay.nostr.band",
-	"wss://relay.snort.social",
-	"wss://offchain.pub",
+	"wss://relay.damus.io",          // CF-fronted (Damus team)
+	"wss://relay.primal.net",        // self-hosted (Primal team)
+	"wss://nostr.mom",               // community, non-CF
+	"wss://nostr.bitcoiner.social",  // community, non-CF
+	"wss://nostr-pub.wellorder.net", // community, non-CF
 }
 
-// broadcastUpdate publishes a signed Nostr event announcing a new CID.
+// broadcastUpdate publishes a signed Nostr event carrying the FULL signed
+// latest.json (CID, version, timestamp, signatures). Daemons + browsers
+// that can't reach GitHub fetch this event, verify the Ed25519 signatures
+// against the hardcoded trusted-signer keys, and treat it as authoritative.
+//
+// Nostr is just transport here — the security boundary is the M-of-N
+// Ed25519 signature scheme. An attacker can publish a Nostr event with
+// any content; they cannot forge a valid signature without the trusted
+// signing keys.
+//
 // nostrSK is a hex-encoded secp256k1 private key.
 func broadcastUpdate(nostrSK string, l *Latest) error {
-	payload, err := json.Marshal(map[string]interface{}{
-		"cid":     l.CID,
-		"version": l.Version,
-		"note":    l.Note,
-	})
+	// Serialize the full Latest payload — daemons need timestamp + signatures
+	// to verify the update, not just the CID.
+	payload, err := json.Marshal(l)
 	if err != nil {
 		return err
 	}

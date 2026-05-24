@@ -140,6 +140,27 @@
     to the signers list.
   </p>
 
+  <h2 id="manual-update">Manual update — when GitHub is unreachable</h2>
+  <p>
+    If GitHub and every Nostr relay you can reach are down or blocked, the developer
+    can still publish a signed update through any other channel — a friend's tweet,
+    a Signal group, a printed flyer, a QR code. The trust anchor is the
+    <strong>Ed25519 signature</strong>, not the transport. Paste the signed
+    <code>latest.json</code> below; your browser verifies it against the
+    hardcoded signer keys before storing it locally.
+  </p>
+  <textarea id="manual-paste" rows="8" placeholder='Paste the signed latest.json here (the JSON object with cid, version, timestamp, signatures)' style="width:100%;font-family:monospace;font-size:.75rem;padding:.5rem;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:var(--r)"></textarea>
+  <div style="margin-top:.5rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+    <button id="manual-apply" style="background:var(--accent);border:none;color:#000;padding:.4rem .8rem;font-weight:600;cursor:pointer;border-radius:var(--r)">Verify &amp; apply</button>
+    <button id="manual-clear" style="background:none;border:1px solid var(--border);color:var(--muted);padding:.4rem .8rem;cursor:pointer;border-radius:var(--r)">Clear stored override</button>
+    <span id="manual-status" style="font-size:.8rem"></span>
+  </div>
+  <p style="font-size:.8rem;color:var(--muted);margin-top:.5rem">
+    Verified updates are stored in this browser's <code>localStorage</code>. Clearing
+    site data or browser cache removes them. The override is used in addition to
+    GitHub and Nostr — whichever source has the highest signed version wins.
+  </p>
+
   <h2>What this cannot protect against</h2>
   <p>
     If an attacker obtains the actual CJP signing private keys <em>and</em> takes over the
@@ -157,5 +178,91 @@
   <br><span id="cjp-verify-badge" class="cjp-badge cjp-badge--pending"></span>
 </footer>
 <script src="js/verify.js" defer></script>
+<script>
+// Manual paste UI: verifies a pasted signed latest.json against the hardcoded
+// signer keys, stores it in localStorage. verify.js picks it up on next load.
+(function () {
+  'use strict';
+  // KEEP IN SYNC with verify.js HARDCODED_SIGNERS — same trust anchor.
+  const HARDCODED_SIGNERS = new Set([
+    'c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3',
+  ]);
+  const HARDCODED_THRESHOLD = 1;
+
+  const ta  = document.getElementById('manual-paste');
+  const btn = document.getElementById('manual-apply');
+  const clr = document.getElementById('manual-clear');
+  const out = document.getElementById('manual-status');
+  if (!ta || !btn || !clr || !out) return;
+
+  function hexToBytes(hex) {
+    const a = new Uint8Array(hex.length >>> 1);
+    for (let i = 0; i < a.length; i++) a[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+    return a;
+  }
+  function setStatus(text, ok) {
+    out.textContent = text;
+    out.style.color = ok ? 'var(--accent)' : '#f76a7c';
+  }
+
+  btn.addEventListener('click', async () => {
+    setStatus('Verifying…', true);
+    let l;
+    try { l = JSON.parse(ta.value); } catch {
+      setStatus('Not valid JSON', false); return;
+    }
+    if (!l || !l.cid || !l.version || !l.timestamp) {
+      setStatus('Missing cid/version/timestamp', false); return;
+    }
+    const sigs = Array.isArray(l.signatures) && l.signatures.length > 0
+      ? l.signatures
+      : (l.signer ? [{ signer: l.signer, signature: l.signature }] : []);
+    const trusted = sigs.filter(s => HARDCODED_SIGNERS.has(s.signer));
+    if (trusted.length === 0) {
+      setStatus('No signature from a trusted signer', false); return;
+    }
+    let msgHash;
+    try {
+      const msgBytes = new TextEncoder().encode(l.cid + '\n' + l.version + '\n' + l.timestamp);
+      msgHash = await crypto.subtle.digest('SHA-256', msgBytes);
+    } catch {
+      setStatus('Browser does not support Ed25519', false); return;
+    }
+    let valid = 0;
+    for (const s of trusted) {
+      try {
+        const pub = await crypto.subtle.importKey(
+          'raw', hexToBytes(s.signer),
+          { name: 'Ed25519' }, false, ['verify']
+        );
+        if (await crypto.subtle.verify({ name: 'Ed25519' }, pub, hexToBytes(s.signature), msgHash)) {
+          valid++;
+        }
+      } catch {}
+    }
+    if (valid < HARDCODED_THRESHOLD) {
+      setStatus('Signature did not verify (' + valid + '/' + HARDCODED_THRESHOLD + ')', false);
+      return;
+    }
+    localStorage.setItem('cjp:manual-latest', JSON.stringify(l));
+    setStatus('✓ Verified v' + l.version + ' · stored. Reload any page to apply.', true);
+  });
+
+  clr.addEventListener('click', () => {
+    localStorage.removeItem('cjp:manual-latest');
+    ta.value = '';
+    setStatus('Override cleared', true);
+  });
+
+  // Show currently-stored override if any.
+  try {
+    const ov = localStorage.getItem('cjp:manual-latest');
+    if (ov) {
+      const l = JSON.parse(ov);
+      setStatus('Override active: v' + l.version, true);
+    }
+  } catch {}
+})();
+</script>
 </body>
 </html>

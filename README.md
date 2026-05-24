@@ -20,14 +20,14 @@ More mirrors are listed live at [cjp.fheya.de/mirror.html](https://cjp.fheya.de/
 Every mirror shows a badge at the bottom of each page. To verify independently:
 
 1. Open [`latest.json`](latest.json) in this repo. Note the `version` number and `cid`.
-2. Open any mirror — the badge must show the **same version number** and **same IPFS CID** (`bafybeigqenmqcvqupguyqr2dl4pb45dcipux62xc73u665p2iqzyb2sqle`).
+2. Open any mirror — the badge must show the **same version number** and **same IPFS CID** (`bafybeibh2l5npundzr7piuoa6gxg3k7xrxduhrhjicrr3u2qqf2fw2jfgq`).
 3. The key fingerprint in the badge (`c1688ff0…b5c3`) must match [trusted-signers.json](trusted-signers.json).
 
 If a mirror shows a different CID, a different version, or a different fingerprint — it is not serving authentic content.
 
 You can also fetch the content directly from IPFS:
 ```
-https://dweb.link/ipfs/bafybeigqenmqcvqupguyqr2dl4pb45dcipux62xc73u665p2iqzyb2sqle
+https://dweb.link/ipfs/bafybeibh2l5npundzr7piuoa6gxg3k7xrxduhrhjicrr3u2qqf2fw2jfgq
 ```
 
 ## Run a volunteer mirror
@@ -140,7 +140,7 @@ Signing authority is intentionally restricted. Contact the repository owner dire
 | Method | Address |
 |--------|---------|
 | Clearweb mirrors | listed at [/mirror](https://cjp.fheya.de/mirror.html) on the site |
-| IPFS gateway | [`dweb.link/ipfs/bafybeigqenmqcvqupguyqr2dl4pb45dcipux62xc73u665p2iqzyb2sqle`](https://dweb.link/ipfs/bafybeigqenmqcvqupguyqr2dl4pb45dcipux62xc73u665p2iqzyb2sqle) |
+| IPFS gateway | [`dweb.link/ipfs/bafybeibh2l5npundzr7piuoa6gxg3k7xrxduhrhjicrr3u2qqf2fw2jfgq`](https://dweb.link/ipfs/bafybeibh2l5npundzr7piuoa6gxg3k7xrxduhrhjicrr3u2qqf2fw2jfgq) |
 | IPNS | pending |
 | ENS | `cockroachjanataparty.eth` — pending on-chain registration |
 | Tor | pending hidden service setup |

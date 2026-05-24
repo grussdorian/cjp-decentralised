@@ -1,12 +1,12 @@
 {
-  "cid": "bafybeigqenmqcvqupguyqr2dl4pb45dcipux62xc73u665p2iqzyb2sqle",
-  "version": 27,
-  "timestamp": 1779631652,
-  "note": "feat: IPFS propagation verification — multi-gateway probe + DHT peer count",
+  "cid": "bafybeibh2l5npundzr7piuoa6gxg3k7xrxduhrhjicrr3u2qqf2fw2jfgq",
+  "version": 28,
+  "timestamp": 1779634121,
+  "note": "feat: GitHub-down resilience — Nostr fallback + manual paste UI, relay pool, propagation proof",
   "signatures": [
     {
       "signer": "c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3",
-      "signature": "7896b0b0a4b52a16a47aa92e0e53a243b0cd7f3edc996dd15a660638371485ef83297777879cab1912c852e760172139984ee6ba0137de5e7421c7e64e0b0505"
+      "signature": "46465786e14408e49ab988a23ed1be2da1d84ace99a8fb1a4222ebdcfd3b23cd4e77da775850d644ff3e21642bf3a6f7d9cfdc6b554cd6f790ebfe21028aef04"
     }
   ]
 }

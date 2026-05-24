@@ -31,6 +31,91 @@ func ensureNostrKey(state *State) {
 	}
 }
 
+// fetchUpdateFromNostr queries heartbeat relays for kind:1 events tagged
+// #cjp-update and returns the highest-versioned event whose embedded
+// Latest payload parses cleanly. Returns nil if no event was found within
+// the timeout — callers must still verify signatures on the returned
+// Latest before trusting it.
+//
+// This is the GitHub-down fallback: the same federated relay set that
+// carries mirror heartbeats also carries signed update announcements.
+// As long as ANY relay in the pool has the event, mirrors can pick up
+// the new CID without GitHub being reachable.
+func fetchUpdateFromNostr(relayURLs []string, since time.Time, timeout time.Duration) *Latest {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	type res struct {
+		l *Latest
+	}
+	resCh := make(chan res, len(relayURLs))
+	for _, url := range relayURLs {
+		go func(u string) {
+			r, err := nostr.RelayConnect(ctx, u)
+			if err != nil {
+				resCh <- res{}
+				return
+			}
+			defer r.Close()
+			filter := nostr.Filter{
+				Kinds: []int{1},
+				Tags:  nostr.TagMap{"t": []string{"cjp-update"}},
+				Since: nostrTimePtr(since),
+				Limit: 50,
+			}
+			sub, err := r.Subscribe(ctx, nostr.Filters{filter})
+			if err != nil {
+				resCh <- res{}
+				return
+			}
+			var best *Latest
+			for {
+				select {
+				case ev, ok := <-sub.Events:
+					if !ok {
+						resCh <- res{best}
+						return
+					}
+					var l Latest
+					if json.Unmarshal([]byte(ev.Content), &l) != nil {
+						continue
+					}
+					if l.CID == "" || len(l.allSigs()) == 0 {
+						continue
+					}
+					if best == nil || l.Version > best.Version {
+						best = &l
+					}
+				case <-sub.EndOfStoredEvents:
+					resCh <- res{best}
+					return
+				case <-ctx.Done():
+					resCh <- res{best}
+					return
+				}
+			}
+		}(url)
+	}
+
+	var best *Latest
+	for range relayURLs {
+		select {
+		case r := <-resCh:
+			if r.l != nil && (best == nil || r.l.Version > best.Version) {
+				best = r.l
+			}
+		case <-ctx.Done():
+			return best
+		}
+	}
+	return best
+}
+
+func nostrTimePtr(t time.Time) *nostr.Timestamp {
+	ts := nostr.Timestamp(t.Unix())
+	return &ts
+}
+
 // broadcastHeartbeat publishes a signed Nostr event announcing this mirror is alive.
 //   url      — optional public clearweb URL of this mirror (e.g. https://mirror.example)
 //   relayURL — optional public wss:// URL of this mirror's bundled relay. When set,

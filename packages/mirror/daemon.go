@@ -156,10 +156,57 @@ func (d *Daemon) poll() {
 	}
 	defer d.pollMu.Unlock()
 
-	urls := buildLatestURLs(d.cfg)
-	latest, source, err := fetchLatest(urls)
-	if err != nil {
-		log.Printf("fetch latest.json: %v", err)
+	// Fetch latest.json from clearweb (GitHub) AND Nostr in parallel.
+	// The Nostr path is GitHub-down resilience: as long as ANY relay in the
+	// federation has the publisher's signed update event, we ingest it
+	// without GitHub being reachable. M-of-N signature verification still
+	// gates trust — Nostr is just transport.
+	type fetchResult struct {
+		l      *Latest
+		source string
+	}
+	httpCh := make(chan fetchResult, 1)
+	nostrCh := make(chan fetchResult, 1)
+
+	go func() {
+		urls := buildLatestURLs(d.cfg)
+		l, src, err := fetchLatest(urls)
+		if err != nil {
+			log.Printf("fetch latest.json (clearweb): %v", err)
+			httpCh <- fetchResult{}
+			return
+		}
+		httpCh <- fetchResult{l, src}
+	}()
+
+	go func() {
+		// Include the bundled local relay (where the operator's own
+		// publisher writes) plus the federated set.
+		urls := append([]string{}, heartbeatRelays...)
+		if d.cfg.LocalRelay != "" {
+			urls = append(urls, d.cfg.LocalRelay)
+		}
+		// Look back 14 days — covers most realistic GitHub-outage windows.
+		l := fetchUpdateFromNostr(urls, time.Now().Add(-14*24*time.Hour), 8*time.Second)
+		if l == nil {
+			nostrCh <- fetchResult{}
+			return
+		}
+		nostrCh <- fetchResult{l, "nostr"}
+	}()
+
+	h := <-httpCh
+	n := <-nostrCh
+
+	var latest *Latest
+	var source string
+	switch {
+	case h.l != nil && (n.l == nil || h.l.Version >= n.l.Version):
+		latest, source = h.l, h.source
+	case n.l != nil:
+		latest, source = n.l, n.source
+	default:
+		log.Println("no latest.json available from any source — staying on current pin")
 		return
 	}
 	log.Printf("Fetched latest.json v%d from %s (CID: %s)", latest.Version, source, latest.CID[:12]+"...")
@@ -169,12 +216,12 @@ func (d *Daemon) poll() {
 		log.Println("No trusted signers configured — skipping pin")
 		return
 	}
-	n, err := verifyThreshold(d.ts, d.trustedKeys, latest)
+	validCount, err := verifyThreshold(d.ts, d.trustedKeys, latest)
 	if err != nil {
 		log.Printf("Signature verification failed: %v — ignoring update", err)
 		return
 	}
-	log.Printf("Verified %d/%d signatures (threshold: %d)", n, len(d.ts.Signers), d.ts.Threshold)
+	log.Printf("Verified %d/%d signatures (threshold: %d)", validCount, len(d.ts.Signers), d.ts.Threshold)
 
 	d.stateMu.RLock()
 	prevCID := d.state.PinnedCID
