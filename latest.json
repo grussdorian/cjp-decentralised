@@ -1,12 +1,12 @@
 {
-  "cid": "bafybeieufwch76rbhd7ssnr66n2fcif7sqqafcgshv2uhaudiq377wt4r4",
-  "version": 24,
-  "timestamp": 1779628399,
-  "note": "fix: CID links use dweb.link (ipfs.io was hanging on fresh CIDs)",
+  "cid": "bafybeigg4so4ybcuosu5zp2fp6vnm3reudcudifk2ywevpcolcq36ktjwy",
+  "version": 25,
+  "timestamp": 1779629828,
+  "note": "fix: og:url + canonical meta tags so link unfurlers (X/Twitter) ignore the redirect target",
   "signatures": [
     {
       "signer": "c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3",
-      "signature": "0e188637684c754d8d09dae8e8a730ed2040a5c83e6e817ee7876732e09607dc2f7bc0df55eb0546449af44fea05c73258ca4f48ca79e2c7c2d89686a426730f"
+      "signature": "89abc84d459e2802ecc2a949f9b8091e5fee0da11006642d4f7110aa55a74444259e7abe4e9d8d7243f5d4fc49b29a8b053b022802f86faed3d09d9061dbc201"
     }
   ]
 }
