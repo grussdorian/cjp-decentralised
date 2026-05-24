@@ -35,6 +35,24 @@ type Attestation struct {
 	WindowStart int64             `json:"window_start"`
 	WindowEnd   int64             `json:"window_end"`
 	Peers       []PeerObservation `json:"peers"`
+
+	// SeenAttestations is the list of Nostr event IDs of OTHER mirrors'
+	// attestations that this mirror has ingested. Including someone's event
+	// ID is a passive endorsement: "I have observed this attestation
+	// existing at this time." Nostr event IDs are content-addressed
+	// (sha256 of pubkey+kind+created_at+tags+content) so the referenced
+	// event must have existed before being referenced — back-dating an
+	// attestation chain requires also forging every event that references it.
+	SeenAttestations []SeenAttestation `json:"seen_attestations,omitempty"`
+}
+
+// SeenAttestation is one entry in the chain — a referenced event from
+// another mirror. EventID + AttesterPubkey + CreatedAt is enough for any
+// verifier to fetch the original event and confirm it existed at that time.
+type SeenAttestation struct {
+	EventID        string `json:"id"`
+	AttesterPubkey string `json:"pubkey"`
+	CreatedAt      int64  `json:"created_at"`
 }
 
 // queryHeartbeatsFromRelay opens a short-lived subscription to the given
@@ -94,39 +112,74 @@ func safePeerURL(s string) string {
 	return u.String()
 }
 
+// queryAttestationsFromRelay fetches every kind:30078 #cjp-attestation
+// event from a relay so the daemon can include them as "seen" references
+// in its own attestation. Same shape as the heartbeat query but a
+// different filter.
+func queryAttestationsFromRelay(relayURL string, since time.Time, timeout time.Duration) ([]*nostr.Event, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	r, err := nostr.RelayConnect(ctx, relayURL)
+	if err != nil {
+		return nil, fmt.Errorf("connect %s: %w", relayURL, err)
+	}
+	defer r.Close()
+	filter := nostr.Filter{
+		Kinds: []int{30078},
+		Tags:  nostr.TagMap{"t": []string{"cjp-attestation"}},
+		Since: nostrTimePtr(since),
+		Limit: 500,
+	}
+	sub, err := r.Subscribe(ctx, nostr.Filters{filter})
+	if err != nil {
+		return nil, fmt.Errorf("subscribe: %w", err)
+	}
+	var events []*nostr.Event
+	for {
+		select {
+		case ev, ok := <-sub.Events:
+			if !ok {
+				return events, nil
+			}
+			events = append(events, ev)
+		case <-sub.EndOfStoredEvents:
+			return events, nil
+		case <-ctx.Done():
+			return events, nil
+		}
+	}
+}
+
 // buildAttestation queries every supplied relay for cjp-mirrors events in
 // the lookback window, aggregates per-pubkey first/last-seen and counts,
-// and returns a snapshot. The mirror's own pubkey is excluded so each
-// mirror's attestation is purely about *other* peers it has observed.
+// and returns a snapshot. Also collects every OTHER mirror's attestation
+// event ID into the SeenAttestations chain — passive endorsement that
+// makes back-dating cryptographically expensive. The mirror's own pubkey
+// is excluded so each attestation is purely about *other* observed peers.
 func buildAttestation(relayURLs []string, ownPubkey string, lookback time.Duration) *Attestation {
 	since := time.Now().Add(-lookback)
 	peers := make(map[string]*PeerObservation)
+	seenAtts := make(map[string]*SeenAttestation) // dedupe by event ID
 
 	for _, u := range relayURLs {
+		// 1. Heartbeats → peer observations.
 		events, err := queryHeartbeatsFromRelay(u, since, 10*time.Second)
 		if err != nil {
-			log.Printf("attestation: query %s: %v", u, err)
-			continue
+			log.Printf("attestation: heartbeats %s: %v", u, err)
 		}
 		for _, ev := range events {
 			if ev.PubKey == ownPubkey {
 				continue
 			}
-			// Parse heartbeat content for url/country.
 			var hb struct {
 				URL     string `json:"url"`
 				Country string `json:"country"`
 			}
 			_ = json.Unmarshal([]byte(ev.Content), &hb)
-
 			ts := int64(ev.CreatedAt)
 			p, ok := peers[ev.PubKey]
 			if !ok {
-				p = &PeerObservation{
-					Pubkey:    ev.PubKey,
-					FirstSeen: ts,
-					LastSeen:  ts,
-				}
+				p = &PeerObservation{Pubkey: ev.PubKey, FirstSeen: ts, LastSeen: ts}
 				peers[ev.PubKey] = p
 			}
 			if ts < p.FirstSeen {
@@ -136,11 +189,31 @@ func buildAttestation(relayURLs []string, ownPubkey string, lookback time.Durati
 				p.LastSeen = ts
 			}
 			p.Heartbeats++
-			if u := safePeerURL(hb.URL); u != "" {
-				p.URL = u // most recent URL wins (operators may change hostnames)
+			if uu := safePeerURL(hb.URL); uu != "" {
+				p.URL = uu
 			}
 			if hb.Country != "" {
 				p.Country = hb.Country
+			}
+		}
+
+		// 2. Other mirrors' attestations → SeenAttestations chain.
+		atts, err := queryAttestationsFromRelay(u, since, 10*time.Second)
+		if err != nil {
+			log.Printf("attestation: query atts %s: %v", u, err)
+			continue
+		}
+		for _, ev := range atts {
+			if ev.PubKey == ownPubkey || ev.ID == "" {
+				continue
+			}
+			if _, dup := seenAtts[ev.ID]; dup {
+				continue
+			}
+			seenAtts[ev.ID] = &SeenAttestation{
+				EventID:        ev.ID,
+				AttesterPubkey: ev.PubKey,
+				CreatedAt:      int64(ev.CreatedAt),
 			}
 		}
 	}
@@ -149,7 +222,6 @@ func buildAttestation(relayURLs []string, ownPubkey string, lookback time.Durati
 	for _, p := range peers {
 		list = append(list, *p)
 	}
-	// Stable order: oldest first_seen first — long-time peers are most credible.
 	sort.Slice(list, func(i, j int) bool {
 		if list[i].FirstSeen != list[j].FirstSeen {
 			return list[i].FirstSeen < list[j].FirstSeen
@@ -157,10 +229,17 @@ func buildAttestation(relayURLs []string, ownPubkey string, lookback time.Durati
 		return list[i].Pubkey < list[j].Pubkey
 	})
 
+	seenList := make([]SeenAttestation, 0, len(seenAtts))
+	for _, s := range seenAtts {
+		seenList = append(seenList, *s)
+	}
+	sort.Slice(seenList, func(i, j int) bool { return seenList[i].CreatedAt < seenList[j].CreatedAt })
+
 	return &Attestation{
-		WindowStart: since.Unix(),
-		WindowEnd:   time.Now().Unix(),
-		Peers:       list,
+		WindowStart:      since.Unix(),
+		WindowEnd:        time.Now().Unix(),
+		Peers:            list,
+		SeenAttestations: seenList,
 	}
 }
 

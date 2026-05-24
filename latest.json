@@ -1,12 +1,12 @@
 {
-  "cid": "bafybeibs72o66x3bdqhshims3qqtgdgfnwt4susxssa3j7whp5dhndpkwe",
-  "version": 29,
-  "timestamp": 1779661624,
-  "note": "feat: peer attestation network — local cache + Nostr broadcast + cross-attestation UI",
+  "cid": "bafybeihwfq3t4cks2clkdeladwe3trtrgvicq4ylciekeeczf45xv33wyi",
+  "version": 30,
+  "timestamp": 1779662436,
+  "note": "feat: trust scoring + SVG attestation graph + attestation-of-attestation chain",
   "signatures": [
     {
       "signer": "c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3",
-      "signature": "fc5cbb201f5b2349b9a49ebdd61e883e68a182d35f09032554e2676bb7b347b7986d3b9ef08a1ad4939ff5a2f6ad8bdc16eb4ee966eea87333e85486f524f509"
+      "signature": "a65595ebe76e1515d906daeea9035f83fc8da2c26bc07ed3610a7ab4ccfc926d00716e75735a2ddaa5c93cddfdc9fa9afa2761ef4821918393a943efaf7f6f00"
     }
   ]
 }
