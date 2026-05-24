@@ -1,12 +1,12 @@
 {
-  "cid": "bafybeiddnhrct7exgum3qpcckmrwnlp35b7ax3bbrxshrymx7yyvf67l3e",
-  "version": 16,
-  "timestamp": 1779580401,
-  "note": "fix: mirror daemon heartbeats every 30s independently of poll cycle",
+  "cid": "bafybeigqsxyc2ac6ssc6rxuejvinvwloxoi4rufh7hcmj3ihlwsgshzupi",
+  "version": 17,
+  "timestamp": 1779580862,
+  "note": "fix: desktop baseline alignment, mobile centered text row, consistent sizing",
   "signatures": [
     {
       "signer": "c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3",
-      "signature": "c10b53471e6f35a5865e4b523681268069d8ef647e0f00d3ef447b13b6598feb8b9b9c2654172ca5e49130b13f3b042e8b994c68c1dd849421e47a64cc8f5107"
+      "signature": "2860eff9dc83dea2070762519cf962d6bfb6f982073296e5e5fe4e23af9ac0c46fb953de7adf29412487d19132869dddce47698e9466a0d109a5ced57de11d01"
     }
   ]
 }

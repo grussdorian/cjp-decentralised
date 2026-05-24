@@ -31,7 +31,7 @@ nav{
   border-bottom:1px solid var(--border);
   padding:0 1.5rem;
   display:flex;
-  align-items:center;
+  align-items:baseline;
   gap:1rem;
   flex-wrap:wrap;
   position:sticky;
@@ -41,13 +41,13 @@ nav{
 
 .logo{
   font-weight:800;
-  font-size:1.05rem;
+  font-size:1rem;
   color:var(--accent);
   text-decoration:none;
   padding:.45rem 0;
   letter-spacing:.5px;
   white-space:nowrap;
-  line-height:1.15;
+  line-height:1;
 }
 
 .logo em{color:var(--text);font-style:normal;font-weight:400;margin-left:.35rem}
@@ -63,18 +63,19 @@ nav ul{
 nav ul a{
   color:var(--text);
   text-decoration:none;
-  padding:.45rem .55rem;
-  display:block;
+  padding:.45rem .5rem;
+  display:flex;
+  align-items:center;
   font-size:.875rem;
   transition:color .12s;
-  line-height:1.15;
+  line-height:1;
 }
 
 nav ul a:hover,nav ul a.active{color:var(--accent)}
 
 .langs{
   display:flex;
-  align-items:center;
+  align-items:baseline;
   gap:.15rem;
   margin-left:auto;
   padding:.45rem 0;
@@ -364,10 +365,10 @@ footer a:hover{color:var(--text)}
 @media(max-width:600px){
   /* ── Compact single-row nav ── */
   nav{
-    gap:0;
-    padding:0 .35rem;
+    gap:.15rem;
+    padding:0 .4rem;
     flex-wrap:nowrap;
-    align-items:baseline;
+    align-items:center;
     overflow-x:auto;
     -webkit-overflow-scrolling:touch;
     scrollbar-width:none;
@@ -375,34 +376,40 @@ footer a:hover{color:var(--text)}
   nav::-webkit-scrollbar{display:none}
 
   .logo{
-    font-size:.78rem;
-    padding:.28rem 0;
+    font-size:.82rem;
+    padding:.35rem 0;
     flex-shrink:0;
     letter-spacing:0;
-    margin-right:.25rem;
-    line-height:1.15;
+    margin-right:.2rem;
+    line-height:1;
+    display:flex;
+    align-items:center;
   }
   .logo em{display:none}
 
   nav ul{flex-shrink:0}
   nav ul a{
-    padding:.28rem .28rem;
-    font-size:.7rem;
+    padding:.35rem .3rem;
+    font-size:.74rem;
     white-space:nowrap;
-    line-height:1.15;
+    line-height:1;
+    display:flex;
+    align-items:center;
   }
 
   .langs{
-    padding:.28rem 0;
-    gap:0;
-    margin-left:.1rem;
+    padding:.35rem 0;
+    gap:.1rem;
+    margin-left:.08rem;
     flex-shrink:0;
+    display:flex;
+    align-items:center;
   }
   .langs a{
-    font-size:.58rem;
-    padding:.06rem .14rem;
+    font-size:.6rem;
+    padding:.08rem .16rem;
     border-radius:2px;
-    line-height:1.15;
+    line-height:1;
   }
 
   /* ── Content ── */
