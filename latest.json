@@ -1,12 +1,12 @@
 {
-  "cid": "bafybeig2vbjcmfqk7khlyrfvvnhdyjpdttwlz2n6gqjl3ux7ylximr25ya",
-  "version": 18,
-  "timestamp": 1779583006,
-  "note": "fix: heartbeat fires before first poll, IPFS CID links use local proxy, avoid port conflicts",
+  "cid": "bafybeid6he3xxxiu7gb4txew32ltacyhqts5655erin3bxzgjigunqsfvy",
+  "version": 19,
+  "timestamp": 1779583636,
+  "note": "fix: revert CID links to ipfs.io for network proof, widen mirror query to 120s",
   "signatures": [
     {
       "signer": "c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3",
-      "signature": "6fda53221543be8ed7be7638c42109ad1ef57556a89edc8ffc646a54d2d3688b8a99d5586e0498ac7e89d198d74c8b23dbce703b2b691d083629a2f944ee5d02"
+      "signature": "3a382069ef46b8566731889260e21a00a4b871f782162ccdb1cbd12c7f54990519c9d5d365767e9d84fd75ab019dbbb084470e6bf2fbd06a8802cd92fac6fd01"
     }
   ]
 }

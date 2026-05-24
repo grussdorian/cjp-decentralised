@@ -1,7 +1,7 @@
 // Queries Nostr relays for mirror heartbeat events and displays live stats.
 import { RELAYS, MIRROR_TAG } from './relays.js';
 
-const ONE_HOUR = 30;
+const ONE_HOUR = 120;
 
 export async function loadMirrorStats(countEl, listEl) {
   const since = Math.floor(Date.now() / 1000) - ONE_HOUR;
@@ -27,7 +27,7 @@ export async function loadMirrorStats(countEl, listEl) {
           div.className = 'stat-box';
           const cidShort = (data.cid || '').slice(0, 12) + '…';
           const cidLink = data.cid
-            ? `<a href="/ipfs/${data.cid}" target="_blank" rel="noopener noreferrer" style="color:var(--muted)">CID ${cidShort}</a>`
+            ? `<a href="https://ipfs.io/ipfs/${data.cid}" target="_blank" rel="noopener noreferrer" style="color:var(--muted)">CID ${cidShort}</a>`
             : 'CID unknown';
           const urlPart = data.url
             ? ` · <a href="${data.url}" target="_blank" rel="noopener noreferrer" style="color:var(--accent)">${new URL(data.url).hostname}</a>`

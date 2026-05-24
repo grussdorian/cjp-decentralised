@@ -94,7 +94,7 @@
     const msgBytes = new TextEncoder().encode(`${latest.cid}\n${latest.version}\n${latest.timestamp}`);
     msgHash = await crypto.subtle.digest('SHA-256', msgBytes);
   } catch (_) {
-    set('unknown', '? Ed25519 not supported in this browser — <a href="/ipfs/' + latest.cid + '" target="_blank" rel="noopener noreferrer">verify via IPFS</a>');
+    set('unknown', '? Ed25519 not supported in this browser — <a href="https://ipfs.io/ipfs/' + latest.cid + '" target="_blank" rel="noopener noreferrer">verify via IPFS</a>');
     return;
   }
 
@@ -126,7 +126,7 @@
   }
 
   const short = c => c.slice(0, 16) + '…';
-  const gwLink = `<a class="cjp-badge__cid" href="/ipfs/${latest.cid}" target="_blank" rel="noopener noreferrer" title="Open canonical version on IPFS">${short(latest.cid)}</a>`;
+  const gwLink = `<a class="cjp-badge__cid" href="https://ipfs.io/ipfs/${latest.cid}" target="_blank" rel="noopener noreferrer" title="Open canonical version on IPFS">${short(latest.cid)}</a>`;
 
   // Short fingerprint: first 8 + last 4 hex chars, e.g. "c1688ff0…b5c3"
   // Shown in the badge so users can cross-check against out-of-band sources

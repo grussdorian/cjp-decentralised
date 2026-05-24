@@ -54,7 +54,7 @@ services:
       COUNTRY: "IN"   # your ISO country code</code></pre>
   <p>
     Then add a reverse proxy (nginx/Caddy/Traefik) to forward your domain to the
-    IPFS gateway at <code>http://localhost:8080/ipfs/&lt;CID&gt;</code>.
+    IPFS gateway at <code>http://localhost:8080https://ipfs.io/ipfs/&lt;CID&gt;</code>.
     The verification badge at the bottom of every page will automatically confirm
     whether your mirror is serving authentic, signed content.
   </p>
@@ -128,7 +128,7 @@ COUNTRY=IN \
     .then(d => {
       const el = document.getElementById('current-cid');
       if (d.cid) {
-        el.innerHTML = `<a href="/ipfs/${d.cid}" target="_blank" rel="noopener noreferrer" style="color:var(--text);text-decoration:underline;text-underline-offset:3px">${d.cid}</a>`;
+        el.innerHTML = `<a href="https://ipfs.io/ipfs/${d.cid}" target="_blank" rel="noopener noreferrer" style="color:var(--text);text-decoration:underline;text-underline-offset:3px">${d.cid}</a>`;
       } else {
         el.textContent = 'not yet published';
       }
