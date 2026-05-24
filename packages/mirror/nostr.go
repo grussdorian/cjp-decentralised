@@ -15,12 +15,14 @@ import (
 // *for writing* (this daemon → relays every minute) trips abuse detection
 // after a few hours from the same IP. Diversify the egress path.
 var heartbeatRelays = []string{
-	"wss://relay.damus.io",     // CF-fronted (Damus team)
-	"wss://relay.primal.net",   // self-hosted (Primal team)
-	"wss://nos.lol",            // CF-fronted (community)
-	"wss://nostr.mom",          // community, non-CF
-	"wss://relay.snort.social", // Fly.io (Snort team)
+	"wss://relay.damus.io",          // CF-fronted (Damus team)
+	"wss://relay.primal.net",        // self-hosted (Primal team)
+	"wss://nostr.mom",               // community, non-CF
+	"wss://nostr.bitcoiner.social",  // community, non-CF
+	"wss://nostr-pub.wellorder.net", // community, non-CF
 }
+// Dropped: nos.lol (now requires NIP-13 28-bit PoW), relay.snort.social
+// (unreachable from this network — i/o timeouts on every connect).
 
 // ensureNostrKey generates a Nostr key for this mirror if one doesn't exist yet.
 func ensureNostrKey(state *State) {
