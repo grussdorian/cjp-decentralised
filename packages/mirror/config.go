@@ -35,6 +35,11 @@ type Config struct {
 	// auto-populate a serve dir (e.g. when nginx serves a directly-mounted
 	// dist/ instead of the auto-updated one).
 	PropagationFile string
+
+	// PeersFile is the explicit path to write peers.json (this mirror's
+	// view of every other mirror it has ever observed via heartbeats).
+	// Same default fallback rule as PropagationFile.
+	PeersFile string
 }
 
 func defaultConfig() Config {
@@ -53,6 +58,7 @@ func defaultConfig() Config {
 		LocalRelay:      envOr("LOCAL_RELAY", ""),
 		MirrorRelayURL:  envOr("MIRROR_RELAY_URL", ""),
 		PropagationFile: envOr("PROPAGATION_FILE", ""),
+		PeersFile:       envOr("PEERS_FILE", ""),
 	}
 }
 

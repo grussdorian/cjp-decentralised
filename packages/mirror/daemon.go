@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/nbd-wtf/go-nostr"
 )
 
 type Daemon struct {
@@ -98,6 +100,13 @@ func (d *Daemon) Run(stop <-chan struct{}) {
 	propTicker := time.NewTicker(10 * time.Minute)
 	defer propTicker.Stop()
 
+	// Attestation refresh — this mirror's view of every other mirror it has
+	// observed. Published as a NIP-33 replaceable Nostr event so the
+	// network can independently verify peer history. 6h is the floor for
+	// "real change in the membership graph"; tighter cadence is wasted load.
+	attTicker := time.NewTicker(6 * time.Hour)
+	defer attTicker.Stop()
+
 	// Fire initial poll in background so heartbeat ticker starts immediately.
 	go d.poll()
 
@@ -115,6 +124,14 @@ func (d *Daemon) Run(stop <-chan struct{}) {
 		}
 	}()
 
+	// Seed the attestation snapshot ~45s after startup — gives the local
+	// relay time to accept the mirror's own first heartbeats, and gives
+	// federated relays time to surface any cross-mirror events.
+	go func() {
+		time.Sleep(45 * time.Second)
+		d.updateAttestation()
+	}()
+
 	for {
 		select {
 		case <-pollTicker.C:
@@ -129,6 +146,8 @@ func (d *Daemon) Run(stop <-chan struct{}) {
 			if cid != "" {
 				go d.updatePropagation(cid)
 			}
+		case <-attTicker.C:
+			go d.updateAttestation()
 		case <-stop:
 			log.Println("Daemon shutting down.")
 			d.pool.Close()
@@ -286,6 +305,58 @@ func (d *Daemon) poll() {
 	// CID is visible to relays well before the next 30s tick. Subsequent
 	// heartbeats are handled by the ticker.
 	d.sendHeartbeat(latest)
+}
+
+// updateAttestation builds this mirror's view of the peer network from
+// recent #cjp-mirrors heartbeats, writes it to peers.json, and broadcasts
+// a NIP-33 parameterized replaceable Nostr event (kind 30078) so other
+// mirrors and visiting browsers can independently query the attestation
+// graph.
+//
+// Best-effort: failures are logged and the previous file is left intact.
+func (d *Daemon) updateAttestation() {
+	d.stateMu.RLock()
+	sk := d.state.NostrSK
+	d.stateMu.RUnlock()
+	if sk == "" {
+		return
+	}
+	ownPubkey, err := nostr.GetPublicKey(sk)
+	if err != nil {
+		log.Printf("attestation: derive pubkey: %v", err)
+		return
+	}
+
+	// Query the bundled local relay plus the federation. 30-day lookback
+	// is long enough to surface peers that were briefly offline; tighter
+	// than that and we miss intermittent participants.
+	relayURLs := []string{}
+	if d.cfg.LocalRelay != "" {
+		relayURLs = append(relayURLs, d.cfg.LocalRelay)
+	}
+	relayURLs = append(relayURLs, heartbeatRelays...)
+
+	a := buildAttestation(relayURLs, ownPubkey, 30*24*time.Hour)
+	log.Printf("attestation: observed %d distinct peers over the last 30 days", len(a.Peers))
+
+	// Write to disk first (always useful even if Nostr publish fails).
+	target := d.cfg.PeersFile
+	if target == "" && d.cfg.ServeDir != "" {
+		target = filepath.Join(d.cfg.ServeDir, "peers.json")
+	}
+	if target != "" {
+		if err := writePeersFile(target, a); err != nil {
+			log.Printf("attestation: write %s: %v", target, err)
+		}
+	}
+
+	// Publish to relays via the existing pool — same persistent connections
+	// that carry heartbeats and update broadcasts.
+	if err := publishAttestation(d.pool, sk, a); err != nil {
+		log.Printf("attestation: publish: %v", err)
+	} else {
+		log.Println("attestation: published")
+	}
 }
 
 // updatePropagation queries the DHT for providers of the CID and writes the

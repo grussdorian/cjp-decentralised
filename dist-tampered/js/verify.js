@@ -62,19 +62,86 @@
     badge.innerHTML = html;
   }
 
+  // Bootstrap relay set for the Nostr fallback path. Kept in sync with the
+  // daemon's heartbeat relays so update events written by the publisher are
+  // discoverable from the browser too.
+  const NOSTR_RELAYS = [
+    'wss://relay.damus.io',
+    'wss://relay.primal.net',
+    'wss://nostr.mom',
+    'wss://nostr.bitcoiner.social',
+    'wss://nostr-pub.wellorder.net',
+  ];
+
+  // Query Nostr for the highest-versioned #cjp-update event whose content
+  // parses as a Latest object. Signature verification happens in Step 3
+  // below — Nostr is just transport here.
+  async function fetchLatestFromNostr(timeoutMs = 5000) {
+    const since = Math.floor(Date.now() / 1000) - 14 * 24 * 3600;
+    const filter = { kinds: [1], '#t': ['cjp-update'], since, limit: 50 };
+    let best = null;
+    await Promise.allSettled(NOSTR_RELAYS.map(url => new Promise(resolve => {
+      let ws;
+      try { ws = new WebSocket(url); } catch { return resolve(); }
+      const subId = Math.random().toString(36).slice(2);
+      const timer = setTimeout(() => { try { ws.close(); } catch {} resolve(); }, timeoutMs);
+      ws.onopen = () => ws.send(JSON.stringify(['REQ', subId, filter]));
+      ws.onmessage = (msg) => {
+        try {
+          const data = JSON.parse(msg.data);
+          if (data[0] === 'EOSE') { clearTimeout(timer); ws.close(); resolve(); return; }
+          if (data[0] === 'EVENT') {
+            try {
+              const l = JSON.parse(data[2].content);
+              if (l && typeof l.cid === 'string' && typeof l.version === 'number') {
+                if (!best || l.version > best.version) best = l;
+              }
+            } catch {}
+          }
+        } catch {}
+      };
+      ws.onerror = () => { clearTimeout(timer); resolve(); };
+    })));
+    return best;
+  }
+
   set('pending', '<span class="cjp-badge__spin"></span>Verifying…');
 
-  // ── Step 1: fetch latest.json from GitHub (CID pointer only) ───────────
+  // ── Step 1: fetch latest.json — manual override > GitHub > Nostr ─────────
   // We do NOT fetch trusted-signers.json from GitHub — that would let a state
-  // actor with GitHub access swap in their own keys.  Trusted keys are hardcoded
-  // above and covered by the IPFS integrity check of this very file.
+  // actor with GitHub access swap in their own keys. Trusted keys are
+  // hardcoded above and covered by the IPFS integrity check of this very
+  // file. Whichever source provides the highest-versioned Latest with a
+  // valid M-of-N Ed25519 signature wins (verification in Steps 2-3).
   let latest;
+
+  // 1a. Manual override (paste UI on trust.html stores a verified Latest here).
   try {
-    const lr = await fetch(REPO + '/latest.json', { cache: 'no-cache' });
-    if (!lr.ok) throw new Error('fetch');
-    latest = await lr.json();
-  } catch (_) {
-    set('unknown', '? Cannot reach GitHub — try the <a href="https://github.com/grussdorian/cjp-decentralised/blob/main/latest.json" target="_blank" rel="noopener noreferrer">signed manifest</a>');
+    const ov = localStorage.getItem('cjp:manual-latest');
+    if (ov) {
+      const parsed = JSON.parse(ov);
+      if (parsed && parsed.cid && parsed.version) latest = parsed;
+    }
+  } catch {}
+
+  // 1b. GitHub raw — primary source when reachable.
+  if (!latest) {
+    try {
+      const lr = await fetch(REPO + '/latest.json', { cache: 'no-cache' });
+      if (lr.ok) latest = await lr.json();
+    } catch {}
+  }
+
+  // 1c. Nostr fallback — works even if GitHub is unreachable. The publisher
+  // broadcasts the full signed Latest to every relay in its set; one event
+  // surviving anywhere in the federation is sufficient.
+  if (!latest) {
+    set('pending', '<span class="cjp-badge__spin"></span>GitHub unreachable — querying Nostr…');
+    latest = await fetchLatestFromNostr();
+  }
+
+  if (!latest) {
+    set('unknown', '? No update source reachable — paste the signed manifest at <a href="trust.html#manual-update">trust.html</a>');
     return;
   }
 

@@ -20,14 +20,14 @@ More mirrors are listed live at [cjp.fheya.de/mirror.html](https://cjp.fheya.de/
 Every mirror shows a badge at the bottom of each page. To verify independently:
 
 1. Open [`latest.json`](latest.json) in this repo. Note the `version` number and `cid`.
-2. Open any mirror — the badge must show the **same version number** and **same IPFS CID** (`bafybeibh2l5npundzr7piuoa6gxg3k7xrxduhrhjicrr3u2qqf2fw2jfgq`).
+2. Open any mirror — the badge must show the **same version number** and **same IPFS CID** (`bafybeibs72o66x3bdqhshims3qqtgdgfnwt4susxssa3j7whp5dhndpkwe`).
 3. The key fingerprint in the badge (`c1688ff0…b5c3`) must match [trusted-signers.json](trusted-signers.json).
 
 If a mirror shows a different CID, a different version, or a different fingerprint — it is not serving authentic content.
 
 You can also fetch the content directly from IPFS:
 ```
-https://dweb.link/ipfs/bafybeibh2l5npundzr7piuoa6gxg3k7xrxduhrhjicrr3u2qqf2fw2jfgq
+https://dweb.link/ipfs/bafybeibs72o66x3bdqhshims3qqtgdgfnwt4susxssa3j7whp5dhndpkwe
 ```
 
 ## Run a volunteer mirror
@@ -140,10 +140,24 @@ Signing authority is intentionally restricted. Contact the repository owner dire
 | Method | Address |
 |--------|---------|
 | Clearweb mirrors | listed at [/mirror](https://cjp.fheya.de/mirror.html) on the site |
-| IPFS gateway | [`dweb.link/ipfs/bafybeibh2l5npundzr7piuoa6gxg3k7xrxduhrhjicrr3u2qqf2fw2jfgq`](https://dweb.link/ipfs/bafybeibh2l5npundzr7piuoa6gxg3k7xrxduhrhjicrr3u2qqf2fw2jfgq) |
+| IPFS gateway | [`dweb.link/ipfs/bafybeibs72o66x3bdqhshims3qqtgdgfnwt4susxssa3j7whp5dhndpkwe`](https://dweb.link/ipfs/bafybeibs72o66x3bdqhshims3qqtgdgfnwt4susxssa3j7whp5dhndpkwe) |
 | IPNS | pending |
 | ENS | `cockroachjanataparty.eth` — pending on-chain registration |
 | Tor | pending hidden service setup |
+
+## Peer attestation network
+
+Every mirror keeps a record of every other mirror it has observed broadcasting heartbeats over the last 30 days, and publishes that record as a signed [NIP-33](https://github.com/nostr-protocol/nips/blob/master/33.md) parameterized replaceable Nostr event (`kind:30078`, tag `#cjp-attestation`).
+
+Two artefacts:
+- **`/peers.json`** — this mirror's view, served as a static file. Anyone with `curl` can read it.
+- **Signed Nostr event** — same data, signed by the mirror's Nostr key, replicated across the federation.
+
+**Why this exists.** If a fake mirror with a forged badge surfaces, the honest network points at its collective attestation graph: the fake's pubkey appears in **zero** attestations from established mirrors. The longer a real mirror has been attested by other mirrors, the more credible it is — Sybil clusters that only attest to each other are visually obvious in the cross-attestation graph.
+
+**Privacy.** Unencrypted by design. Mirror pubkeys, URLs, and country codes are already public in heartbeats. The whole defence works *because* anyone can verify "this fake was never one of us" — encryption would defeat that.
+
+The live attestation table is rendered at the bottom of [trust.html](https://cjp.fheya.de/trust.html#attestation-network), built in-browser from Nostr events. Peers with **attesters ≥ 2** have been independently observed by multiple mirrors and are credible. Peers with **attesters = 1** are either new or only self-observed — verify out-of-band before trusting.
 
 ## Federated IPFS gateway (bundled)
 

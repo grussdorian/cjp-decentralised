@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-24T14:07:25.825Z",
+  "generated": "2026-05-24T22:26:56.428Z",
   "files": {
     "bn/demand.html": "50ceb23d45eab410f98ef0fd90694ea736ef9504393300a251c0f4c4b56678df",
     "bn/index.html": "4e5d270121ddc90da0fcef2664bee25cd418405f969b5421372fb1ecc5d40286",
@@ -19,7 +19,7 @@
     "js/nostr-tools.bundle.js": "eda4a17ecbef9b28b040f47225d75bcce49b3e27a2c08bd48cba8e3f1d47d79b",
     "js/pow-worker.js": "9a8a072aa4ecd33a0585e1fc11744588017978161b2fcb49670cacda607e845f",
     "js/relays.js": "372e056cebe396299e54d71d9b5228ff7389df821f509e8b8bbdc23d9b385e14",
-    "js/verify.js": "a62d1f63a055b80eaf37b137deba9fc99046aeb71b6ce9bdea708831391da6bb",
+    "js/verify.js": "77b25cfd6e43d269f604f2b8fb4a4d8832106627af3aee9fde57fc2c1142e69f",
     "mirror.html": "7ca98ba789316022f22c32d061c4efb9de8db3e9e8b50d924e6256282f3169a6",
     "ta/demand.html": "b4f78110087b0ddd00ff0de3aac3a69ec14f655727e3b9550d4e5c24855ec8c0",
     "ta/index.html": "79f6c3fc0b12e233ef71c361d22ccab015817c1a0d08d3a36a747740a3628437",
@@ -29,6 +29,6 @@
     "te/index.html": "762d0722cf795d6ba921a916c598855455fb93428d7d4890ea480898350ed980",
     "te/join.html": "dfcc9143e1e48ce07e6960661c95265a61c8a5834c0cdc8426ba119be3b0af18",
     "te/mirror.html": "3233c88184a69b217e288b825cca60d30f92de470ef9f1da39a5a150c583071e",
-    "trust.html": "92f2a43f9ea7db36818bd8ee7b1f284b0f99c93834922c6a33dac6cab60c432e"
+    "trust.html": "550c0f3c828c1c103a8727b7598a1c1661fa40955b2267e3fd3811d78f1a4b96"
   }
 }

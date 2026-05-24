@@ -161,6 +161,22 @@
     GitHub and Nostr — whichever source has the highest signed version wins.
   </p>
 
+  <h2 id="attestation-network">Peer attestation network</h2>
+  <p>
+    Every mirror publishes a periodic <strong>attestation</strong> — a signed Nostr event listing
+    every other mirror it has observed broadcasting heartbeats over the last 30 days. The
+    attestation graph is the network's collective memory: a peer is credible to the extent that
+    multiple long-standing mirrors have observed it over time. A fake mirror that pops up out of
+    nowhere appears in zero established attestations — that absence is the evidence the network
+    points to when contesting impostors.
+  </p>
+  <p style="font-size:.85rem;color:var(--muted)">
+    The data is unencrypted by design: anyone can verify the claim "this fake was never one of us"
+    only if anyone can read the attestations. Trust is public, queryable, and reproducible.
+  </p>
+  <div id="attestation-status" style="margin:.75rem 0;color:var(--muted);font-size:.85rem">Loading from Nostr…</div>
+  <div id="attestation-list"></div>
+
   <h2>What this cannot protect against</h2>
   <p>
     If an attacker obtains the actual CJP signing private keys <em>and</em> takes over the
@@ -262,6 +278,169 @@
       setStatus('Override active: v' + l.version, true);
     }
   } catch {}
+})();
+</script>
+<script>
+// Peer attestation viewer. Queries Nostr for kind:30078 #cjp-attestation
+// events from every mirror, builds a cross-attestation graph, and renders
+// the peer list with how many distinct attesters have ever named each peer.
+// A peer that appears in only its own attestation (or in zero attestations
+// from anyone else) is unattested — treat as suspect.
+(function () {
+  'use strict';
+  const RELAYS = [
+    'wss://relay.damus.io',
+    'wss://relay.primal.net',
+    'wss://nostr.mom',
+    'wss://nostr.bitcoiner.social',
+    'wss://nostr-pub.wellorder.net',
+  ];
+
+  const statusEl = document.getElementById('attestation-status');
+  const listEl   = document.getElementById('attestation-list');
+  if (!statusEl || !listEl) return;
+
+  function el(tag, attrs, text) {
+    const e = document.createElement(tag);
+    if (attrs) for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function safeURL(s) {
+    if (typeof s !== 'string') return null;
+    try {
+      const u = new URL(s);
+      return (u.protocol === 'https:' || u.protocol === 'http:') ? u : null;
+    } catch { return null; }
+  }
+
+  async function queryRelay(url, filter, attestations, timeoutMs = 6000) {
+    return new Promise(resolve => {
+      let ws;
+      try { ws = new WebSocket(url); } catch { return resolve(); }
+      const subId = Math.random().toString(36).slice(2);
+      const timer = setTimeout(() => { try { ws.close(); } catch {} resolve(); }, timeoutMs);
+      ws.onopen = () => ws.send(JSON.stringify(['REQ', subId, filter]));
+      ws.onmessage = (msg) => {
+        try {
+          const data = JSON.parse(msg.data);
+          if (data[0] === 'EOSE') { clearTimeout(timer); ws.close(); resolve(); return; }
+          if (data[0] === 'EVENT') attestations.push(data[2]);
+        } catch {}
+      };
+      ws.onerror = () => { clearTimeout(timer); resolve(); };
+    });
+  }
+
+  async function load() {
+    const since = Math.floor(Date.now() / 1000) - 90 * 24 * 3600;
+    const filter = { kinds: [30078], '#t': ['cjp-attestation'], since, limit: 200 };
+    const events = [];
+    await Promise.allSettled(RELAYS.map(u => queryRelay(u, filter, events)));
+
+    // Each event is one mirror's attestation. Index by attester pubkey,
+    // keeping only the newest event per attester (NIP-33 replaceable).
+    const latestByAttester = new Map();
+    for (const ev of events) {
+      const prev = latestByAttester.get(ev.pubkey);
+      if (!prev || ev.created_at > prev.created_at) latestByAttester.set(ev.pubkey, ev);
+    }
+
+    // Aggregate: for each *observed* peer pubkey, count distinct attesters.
+    const peerInfo = new Map(); // pubkey → { url, country, attesters: Set, firstSeen, lastSeen }
+    const attesterCount = latestByAttester.size;
+    for (const att of latestByAttester.values()) {
+      let payload;
+      try { payload = JSON.parse(att.content); } catch { continue; }
+      if (!payload || !Array.isArray(payload.peers)) continue;
+      for (const p of payload.peers) {
+        if (!p || typeof p.pubkey !== 'string') continue;
+        let info = peerInfo.get(p.pubkey);
+        if (!info) {
+          info = { url: '', country: '', attesters: new Set(), firstSeen: p.first_seen || 0, lastSeen: p.last_seen || 0 };
+          peerInfo.set(p.pubkey, info);
+        }
+        info.attesters.add(att.pubkey);
+        if (p.url && safeURL(p.url)) info.url = p.url;
+        if (p.country) info.country = p.country;
+        if (p.first_seen && (!info.firstSeen || p.first_seen < info.firstSeen)) info.firstSeen = p.first_seen;
+        if (p.last_seen && p.last_seen > info.lastSeen) info.lastSeen = p.last_seen;
+      }
+    }
+
+    // The attester mirrors themselves are part of the network too, even
+    // if no one has named them in an attestation yet. Add them with
+    // attesters = {self} so the visible list is complete.
+    for (const attPub of latestByAttester.keys()) {
+      if (!peerInfo.has(attPub)) {
+        peerInfo.set(attPub, { url: '', country: '', attesters: new Set([attPub]), firstSeen: 0, lastSeen: 0 });
+      }
+    }
+
+    if (attesterCount === 0) {
+      statusEl.textContent = 'No attestations available yet — the network may be young or relays unreachable.';
+      return;
+    }
+
+    const peers = Array.from(peerInfo.entries()).sort((a, b) =>
+      b[1].attesters.size - a[1].attesters.size ||
+      a[1].firstSeen - b[1].firstSeen
+    );
+    statusEl.textContent = attesterCount + ' attesting mirror' + (attesterCount === 1 ? '' : 's') + ' · ' + peers.length + ' distinct peer' + (peers.length === 1 ? '' : 's') + ' observed';
+
+    listEl.replaceChildren();
+    const table = el('table', { style: 'width:100%;border-collapse:collapse;font-size:.8rem' });
+    const thead = el('thead');
+    const tr0 = el('tr');
+    for (const h of ['Peer', 'URL', 'Country', 'Attesters', 'First seen', 'Last seen']) {
+      const th = el('th', { style: 'text-align:left;padding:.4rem .5rem;border-bottom:1px solid var(--border);color:var(--muted);font-weight:600' }, h);
+      tr0.appendChild(th);
+    }
+    thead.appendChild(tr0);
+    table.appendChild(thead);
+    const tbody = el('tbody');
+    for (const [pubkey, info] of peers) {
+      const tr = el('tr', { style: 'border-bottom:1px solid var(--border)' });
+      const fingerprint = pubkey.slice(0, 8) + '…' + pubkey.slice(-4);
+      tr.appendChild(el('td', { style: 'padding:.4rem .5rem;font-family:monospace' }, fingerprint));
+
+      const urlCell = el('td', { style: 'padding:.4rem .5rem' });
+      const url = safeURL(info.url);
+      if (url) {
+        urlCell.appendChild(el('a', { href: url.href, target: '_blank', rel: 'noopener noreferrer', style: 'color:var(--accent)' }, url.hostname));
+      } else {
+        urlCell.textContent = '—';
+        urlCell.style.color = 'var(--muted)';
+      }
+      tr.appendChild(urlCell);
+
+      tr.appendChild(el('td', { style: 'padding:.4rem .5rem;color:var(--muted)' }, info.country || '—'));
+
+      const att = info.attesters.size;
+      const attCell = el('td', { style: 'padding:.4rem .5rem' });
+      const attBadge = el('span', {
+        style: 'padding:.1rem .4rem;border-radius:3px;font-size:.7rem;background:' +
+               (att >= 2 ? 'rgba(245,197,24,.15);color:var(--accent)' : 'transparent;color:var(--muted)') +
+               ';border:1px solid ' + (att >= 2 ? 'var(--accent)' : 'var(--border)'),
+      }, att + ' / ' + attesterCount);
+      attCell.appendChild(attBadge);
+      tr.appendChild(attCell);
+
+      const fmt = ts => ts ? new Date(ts * 1000).toISOString().slice(0, 10) : '—';
+      tr.appendChild(el('td', { style: 'padding:.4rem .5rem;color:var(--muted)' }, fmt(info.firstSeen)));
+      tr.appendChild(el('td', { style: 'padding:.4rem .5rem;color:var(--muted)' }, fmt(info.lastSeen)));
+
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+    listEl.appendChild(table);
+
+    const note = el('p', { style: 'font-size:.75rem;color:var(--muted);margin-top:.6rem' });
+    note.textContent = 'A peer with attesters ≥ 2 has been independently observed by multiple mirrors. A peer with attesters = 1 is either new or only observed by itself — verify out-of-band before trusting.';
+    listEl.appendChild(note);
+  }
+
+  load();
 })();
 </script>
 </body>
