@@ -20,14 +20,14 @@ More mirrors are listed live at [cjp.fheya.de/mirror.html](https://cjp.fheya.de/
 Every mirror shows a badge at the bottom of each page. To verify independently:
 
 1. Open [`latest.json`](latest.json) in this repo. Note the `version` number and `cid`.
-2. Open any mirror — the badge must show the **same version number** and **same IPFS CID** (`bafybeibyhq2i64wsjfbmq7u4ep7qfhvqqx4neiytcj7ksuceenrjwv7tvy`).
+2. Open any mirror — the badge must show the **same version number** and **same IPFS CID** (`bafybeiboqxcm3isxdyf2yncqekdtmmaq4egqnys7ipk6qh3vgeykeb4uli`).
 3. The key fingerprint in the badge (`c1688ff0…b5c3`) must match [trusted-signers.json](trusted-signers.json).
 
 If a mirror shows a different CID, a different version, or a different fingerprint — it is not serving authentic content.
 
 You can also fetch the content directly from IPFS:
 ```
-https://ipfs.io/ipfs/bafybeibyhq2i64wsjfbmq7u4ep7qfhvqqx4neiytcj7ksuceenrjwv7tvy
+https://ipfs.io/ipfs/bafybeiboqxcm3isxdyf2yncqekdtmmaq4egqnys7ipk6qh3vgeykeb4uli
 ```
 
 ## Run a volunteer mirror
@@ -108,10 +108,30 @@ Signing authority is intentionally restricted. Contact the repository owner dire
 | Method | Address |
 |--------|---------|
 | Clearweb mirrors | listed at [/mirror](https://cjp.fheya.de/mirror.html) on the site |
-| IPFS gateway | [`ipfs.io/ipfs/bafybeibyhq2i64wsjfbmq7u4ep7qfhvqqx4neiytcj7ksuceenrjwv7tvy`](https://ipfs.io/ipfs/bafybeibyhq2i64wsjfbmq7u4ep7qfhvqqx4neiytcj7ksuceenrjwv7tvy) |
+| IPFS gateway | [`ipfs.io/ipfs/bafybeiboqxcm3isxdyf2yncqekdtmmaq4egqnys7ipk6qh3vgeykeb4uli`](https://ipfs.io/ipfs/bafybeiboqxcm3isxdyf2yncqekdtmmaq4egqnys7ipk6qh3vgeykeb4uli) |
 | IPNS | pending |
 | ENS | `cockroachjanataparty.eth` — pending on-chain registration |
 | Tor | pending hidden service setup |
+
+## Federated relay (bundled)
+
+Every mirror runs its own [strfry](https://github.com/hoytech/strfry) Nostr relay alongside IPFS. The mirror daemon writes heartbeats to its local relay first (guaranteed success), then to a small set of public relays for federation. Set `MIRROR_RELAY_URL` to your public WSS URL to advertise your relay to other mirrors — visiting browsers automatically discover it from your heartbeats and merge it into their query pool.
+
+**Why it matters:**
+- **No central point of failure.** As more volunteers join, the relay set grows automatically.
+- **Daemon liveness doesn't depend on any public relay.** Local writes always succeed.
+- **Resilient to relay policy changes.** When public relays add PoW requirements, disappear, or rate-limit, the federated set keeps working.
+
+**Default config:** the relay is bundled but not exposed publicly. Volunteers opt-in to federation by setting `MIRROR_RELAY_URL` in `docker-compose.override.yml`:
+
+```yaml
+services:
+  mirror:
+    environment:
+      MIRROR_RELAY_URL: "wss://mirror.example.com/relay"
+```
+
+The bundled `nginx.conf` reverse-proxies `/relay` to the strfry container with proper WebSocket upgrade headers, so no extra config is needed.
 
 ## Form data persistence
 

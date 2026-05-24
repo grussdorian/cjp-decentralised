@@ -56,6 +56,14 @@ func newDaemon(cfg Config) (*Daemon, error) {
 		log.Printf("warning: IPFS daemon not reachable at %s", cfg.IPFSApi)
 	}
 
+	// Pool prepends the bundled local relay (if configured) before the public
+	// federation set. Local writes never fail; public writes are best-effort.
+	relayURLs := []string{}
+	if cfg.LocalRelay != "" {
+		relayURLs = append(relayURLs, cfg.LocalRelay)
+	}
+	relayURLs = append(relayURLs, heartbeatRelays...)
+
 	return &Daemon{
 		cfg:         cfg,
 		ipfs:        ipfs,
@@ -63,7 +71,7 @@ func newDaemon(cfg Config) (*Daemon, error) {
 		trustedKeys: keys,
 		state:       state,
 		peerID:      peerID,
-		pool:        NewRelayPool(heartbeatRelays),
+		pool:        NewRelayPool(relayURLs),
 	}, nil
 }
 
@@ -205,7 +213,7 @@ func (d *Daemon) sendHeartbeat(latest *Latest) {
 	if sk == "" {
 		return
 	}
-	if err := broadcastHeartbeat(d.pool, sk, d.peerID, latest.CID, d.cfg.Country, d.cfg.MirrorURL, latest.Version); err != nil {
+	if err := broadcastHeartbeat(d.pool, sk, d.peerID, latest.CID, d.cfg.Country, d.cfg.MirrorURL, d.cfg.MirrorRelayURL, latest.Version); err != nil {
 		log.Printf("heartbeat: %v", err)
 	} else {
 		log.Println("Heartbeat sent to Nostr")

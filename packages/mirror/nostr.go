@@ -32,13 +32,15 @@ func ensureNostrKey(state *State) {
 }
 
 // broadcastHeartbeat publishes a signed Nostr event announcing this mirror is alive.
-// url is optional — set it to the public clearweb URL of this mirror (e.g. https://mymirror.example.com)
-// so that the mirror registry on the site can list it as a clickable link.
+//   url      — optional public clearweb URL of this mirror (e.g. https://mirror.example)
+//   relayURL — optional public wss:// URL of this mirror's bundled relay. When set,
+//              browsers discover it from the heartbeat and add it to their query
+//              pool, so federation grows organically with volunteer count.
 //
 // Uses a RelayPool so the connection to each relay survives across heartbeats.
 // Without this, every 30-60s tick re-did a full TLS+WSS handshake and CF's
 // abuse detection rate-limited the daemon after a few hours.
-func broadcastHeartbeat(pool *RelayPool, nostrSK, peerID, cid, country, url string, version int64) error {
+func broadcastHeartbeat(pool *RelayPool, nostrSK, peerID, cid, country, url, relayURL string, version int64) error {
 	fields := map[string]interface{}{
 		"peer_id": peerID,
 		"cid":     cid,
@@ -48,6 +50,9 @@ func broadcastHeartbeat(pool *RelayPool, nostrSK, peerID, cid, country, url stri
 	}
 	if url != "" {
 		fields["url"] = url
+	}
+	if relayURL != "" {
+		fields["relay_url"] = relayURL
 	}
 	payload, err := json.Marshal(fields)
 	if err != nil {

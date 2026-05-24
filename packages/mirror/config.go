@@ -18,6 +18,16 @@ type Config struct {
 	MirrorURL    string        // Public URL of this mirror's clearweb endpoint (optional, e.g. https://mymirror.example.com)
 	GatewayURL   string        // IPFS HTTP gateway URL, e.g. http://localhost:8080 (used to fetch content after pinning)
 	ServeDir     string        // If set, populate this directory with site files after each successful pin
+
+	// LocalRelay is the bundled relay's internal URL (e.g. ws://relay:7777).
+	// Prepended to the pool so the daemon always has a guaranteed-success
+	// write target — eliminates dependence on public relays for liveness.
+	LocalRelay string
+
+	// MirrorRelayURL is the bundled relay's PUBLIC URL (wss://). When set,
+	// it is broadcast in heartbeat events so browsers can discover it and
+	// merge it into their query pool — federation grows with volunteer count.
+	MirrorRelayURL string
 }
 
 func defaultConfig() Config {
@@ -31,8 +41,10 @@ func defaultConfig() Config {
 		StateFile:   envOr("STATE_FILE", home+"/.cjp/mirror-state.json"),
 		Country:   envOr("COUNTRY", ""),
 		MirrorURL: envOr("MIRROR_URL", ""),
-		GatewayURL: envOr("IPFS_GATEWAY", ""),
-		ServeDir:  envOr("SERVE_DIR", ""),
+		GatewayURL:     envOr("IPFS_GATEWAY", ""),
+		ServeDir:       envOr("SERVE_DIR", ""),
+		LocalRelay:     envOr("LOCAL_RELAY", ""),
+		MirrorRelayURL: envOr("MIRROR_RELAY_URL", ""),
 	}
 }
 

@@ -1,12 +1,12 @@
 {
-  "cid": "bafybeibyhq2i64wsjfbmq7u4ep7qfhvqqx4neiytcj7ksuceenrjwv7tvy",
-  "version": 22,
-  "timestamp": 1779585763,
-  "note": "medium-severity fixes: XSS hardening, gateway race, parseDuration, dedup heartbeat",
+  "cid": "bafybeiboqxcm3isxdyf2yncqekdtmmaq4egqnys7ipk6qh3vgeykeb4uli",
+  "version": 23,
+  "timestamp": 1779627872,
+  "note": "feat: bundled strfry relay + browser federation discovery via heartbeat relay_url",
   "signatures": [
     {
       "signer": "c1688ff074c50557d4aacfd668580c119dd4e425f18eb65c8cffac53a433b5c3",
-      "signature": "b654ab067251fa80d7c0db63ea65ab9426e283b9cc5f0d4d53f28fdc1f992ba13522511b8012d138ef6b195485dedf64c1b8ec8472a9e68e07feb97bdaa46d0c"
+      "signature": "b944166acb0fa8f706cca3d89b4bb41d92f44f7a6086209d3f37420026350af9f39d988f49dc388f11b39bff0a2c5f760364c0207efa967c2501de8782d4f70b"
     }
   ]
 }

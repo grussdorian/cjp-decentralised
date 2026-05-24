@@ -9,16 +9,35 @@ services:
     volumes:
       - ipfs_data:/data/ipfs
 
+  # Bundled strfry relay. Mirror daemon writes heartbeats here first
+  # (guaranteed local success), then to public relays for federation.
+  # Browsers discover this relay from heartbeats via MIRROR_RELAY_URL.
+  relay:
+    image: dockurr/strfry:latest
+    restart: unless-stopped
+    volumes:
+      - ./strfry.conf:/etc/strfry.conf:ro
+      - relay_data:/app/strfry-db
+
   mirror:
     image: ghcr.io/cjp-decentralized/mirror:latest
     restart: unless-stopped
     depends_on:
       - ipfs
+      - relay
     environment:
       IPFS_API: "http://ipfs:5001"
       IPFS_GATEWAY: "http://ipfs:8080"
       POLL_INTERVAL: "900"  # seconds
       SERVE_DIR: "/var/cjp/html"
+      # Local relay — always-success target so daemon liveness doesn't depend
+      # on any public relay being reachable.
+      LOCAL_RELAY: "ws://relay:7777"
+      # MIRROR_RELAY_URL — set to your public wss:// URL (e.g. wss://mirror.example/relay)
+      # to advertise your bundled relay to other mirrors. Browsers visiting the
+      # site will discover it and add it to their query pool. Leave blank to
+      # keep the relay private (still useful — your own writes never fail).
+      MIRROR_RELAY_URL: ""
     volumes:
       - ./trusted-signers.json:/app/trusted-signers.json:ro
       - ./latest.json:/app/latest.json:ro
@@ -27,6 +46,8 @@ services:
   nginx:
     image: nginx:alpine
     restart: unless-stopped
+    depends_on:
+      - relay
     ports:
       - "${NGINX_PORT:-80}:80"
     volumes:
@@ -45,3 +66,4 @@ volumes:
   ipfs_data:
   html_data:
   tor_data:
+  relay_data:
