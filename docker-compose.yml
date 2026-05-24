@@ -27,7 +27,8 @@ services:
       - relay_data:/app/strfry-db
 
   mirror:
-    image: ghcr.io/cjp-decentralized/mirror:latest
+    build:
+      context: ./packages/mirror
     restart: unless-stopped
     depends_on:
       - ipfs
@@ -40,11 +41,11 @@ services:
       # Local relay — always-success target so daemon liveness doesn't depend
       # on any public relay being reachable.
       LOCAL_RELAY: "ws://relay:7777"
-      # MIRROR_RELAY_URL — set to your public wss:// URL (e.g. wss://mirror.example/relay)
-      # to advertise your bundled relay to other mirrors. Browsers visiting the
-      # site will discover it and add it to their query pool. Leave blank to
-      # keep the relay private (still useful — your own writes never fail).
-      MIRROR_RELAY_URL: ""
+      # Public wss:// URL of the bundled relay (advertised in heartbeats so
+      # visitors discover it). Typically wss://<MIRROR_HOST>/relay.
+      MIRROR_RELAY_URL: "${MIRROR_RELAY_URL:-}"
+      # ISO country code shown next to this mirror in the live list.
+      COUNTRY: "${COUNTRY:-}"
     volumes:
       - ./trusted-signers.json:/app/trusted-signers.json:ro
       - ./latest.json:/app/latest.json:ro
@@ -55,11 +56,32 @@ services:
     restart: unless-stopped
     depends_on:
       - relay
-    ports:
-      - "${NGINX_PORT:-80}:80"
+    expose:
+      - "80"
     volumes:
       - html_data:/var/cjp/html:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+  # Caddy fronts nginx with automatic Let's Encrypt TLS. When MIRROR_HOST is
+  # set (recommended for public mirrors), Caddy provisions a real cert and
+  # redirects HTTP → HTTPS. When unset, Caddy just serves HTTP on :80 —
+  # useful for local testing or when the operator has their own reverse
+  # proxy in front of this stack.
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      MIRROR_HOST: "${MIRROR_HOST:-}"
+      ACME_EMAIL: "${ACME_EMAIL:-}"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
 
   tor:
     image: dperson/torproxy:latest
@@ -74,3 +96,5 @@ volumes:
   html_data:
   tor_data:
   relay_data:
+  caddy_data:
+  caddy_config:

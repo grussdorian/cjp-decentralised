@@ -1,0 +1,19 @@
+# Caddy auto-HTTPS for the volunteer mirror stack.
+#
+# When MIRROR_HOST is set (e.g. cjp.example.com), Caddy provisions a free
+# Let's Encrypt certificate for that hostname, serves on :443, and
+# redirects :80 → :443. When unset, Caddy serves :80 only — useful for
+# local testing or when the operator has their own external reverse proxy
+# in front of this stack.
+#
+# Configure via .env or shell:
+#   MIRROR_HOST=cjp.example.com   # public hostname (omit scheme)
+#   ACME_EMAIL=ops@example.com    # optional, for LE expiry notifications
+
+{
+	email {$ACME_EMAIL}
+}
+
+{$MIRROR_HOST::80} {
+	reverse_proxy nginx:80
+}

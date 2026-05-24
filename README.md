@@ -32,28 +32,31 @@ https://dweb.link/ipfs/bafybeigqenmqcvqupguyqr2dl4pb45dcipux62xc73u665p2iqzyb2sq
 
 ## Run a volunteer mirror
 
+Everything you need is bundled. A VPS with a public IP and a DNS record is enough — the stack builds itself, provisions a free TLS cert, and federates with the network.
+
 ```bash
 git clone https://github.com/grussdorian/cjp-decentralised
 cd cjp-decentralised
+cp .env.example .env       # edit MIRROR_HOST, ACME_EMAIL, MIRROR_RELAY_URL
 docker compose up -d
 ```
 
-Your node pins the latest signed content to IPFS and announces itself on the global Nostr mirror registry every 15 minutes — no domain or registration required.
+That's the whole setup. The stack brings up:
 
-**To appear as a clickable link on the site**, set `MIRROR_URL` to your public hostname:
+| Service | Role |
+|---------|------|
+| **caddy** | Auto-HTTPS via Let's Encrypt — provisions a cert for `MIRROR_HOST` on first run |
+| **nginx** | Serves the static site + reverse-proxies `/ipfs/*` and `/relay` |
+| **ipfs** (kubo) | Pins the latest signed CID; serves the self-hosted IPFS gateway |
+| **relay** (strfry) | Bundled Nostr relay; daemon writes heartbeats here first |
+| **mirror** | Builds from source; polls `latest.json`, verifies signatures, pins, broadcasts |
+| **tor** | Optional `.onion` hidden service |
 
-```yaml
-# docker-compose.override.yml
-services:
-  mirror:
-    environment:
-      MIRROR_URL: "https://cjp.yourdomain.example"
-      COUNTRY: "IN"
-```
+**For a public mirror**, set `MIRROR_HOST=cjp.example.com` in `.env`. The DNS A/AAAA record must already point at the VPS — Caddy uses the HTTP-01 challenge to get the cert, so the host must be reachable from the public internet on port 80 before the first `docker compose up`.
 
-Your domain will appear automatically in the [live mirror list](https://cjp.fheya.de/mirror.html) within two minutes — no PR or manual registration needed. Visitors can click your link and independently verify the badge on your mirror.
+**For a local test stack**, leave `MIRROR_HOST` empty. Caddy serves HTTP-only on `:80`, no cert work happens, and the daemon still federates via public Nostr relays.
 
-See [mirror.html](https://cjp.fheya.de/mirror.html) for full setup instructions including serving with your own nginx or Apache.
+Your domain appears automatically in the [live mirror list](https://cjp.fheya.de/mirror.html) within ~2 minutes of the daemon broadcasting its first heartbeat. No PR, no manual registration.
 
 ## Repository layout
 
